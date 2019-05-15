@@ -1,0 +1,1 @@
+The aim of this project is to investigate the implementation and the applications of semantic segmentation via deep learning models. 
