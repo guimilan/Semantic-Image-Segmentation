@@ -26,7 +26,8 @@ def load_dataset():
 	return train_loader, test_loader, classes
 
 class CNN(nn.Module):
-	def __init__(self):
+	#Implementacao da AlexNet, baseada na implementacao do proprio pytorch
+	def __init__(self, device):
 		super(CNN, self).__init__()
 		self.conv1 = nn.Conv2d(3,6,5)
 		self.pool = nn.MaxPool2d(2,2)
@@ -34,7 +35,9 @@ class CNN(nn.Module):
 		self.fc1 = nn.Linear(16*5*5, 120)
 		self.fc2 = nn.Linear(120, 84)
 		self.fc3 = nn.Linear(84, 10)
-
+		self.device = device
+		self.to(device)
+		
 	def forward(self, x):
 		x = self.pool(F.relu(self.conv1(x))) #Aplica relu e faz pooling sobre a saida da 1a conv
 		x = self.pool(F.relu(self.conv2(x)))
@@ -57,12 +60,16 @@ class CNN(nn.Module):
 			for index, data in enumerate(train_dataset, 0):
 				#data contem um batch de 4 samples do dataset e suas classes
 				samples, labels = data
+				samples, labels = samples.to(self.device), labels.to(self.device)
+				samples = samples.to(self.device)
+				labels = labels.to(self.device)
 
-				optimizer.zero_grad()#Zera o gradiente
-				predicted = self.forward(samples)#Pega a saida da rede
+				optimizer.zero_grad()#Zera o gradiente (se nao fizer isso, ele acumula e aplica o acumulado
+				#na hora de atualizar os pesos)
+				predicted = self(samples)#Pega a saida da rede
 				loss = criterion(predicted, labels)#Calcula o erro
-				loss.backward()#Faz backpropagation?
-				optimizer.step()#?
+				loss.backward()#Faz backpropagation e calcula o quanto cada parametro deve ser otimizado
+				optimizer.step()#Atualiza cada parametro com os valores calculados no backpropagation
 
 				running_loss += loss.item()#?
 				if index % 2000 == 1999:
@@ -77,27 +84,24 @@ class CNN(nn.Module):
 		with torch.no_grad():
 			for data in test_dataset:
 				samples, labels = data
+				samples = samples.to(self.device)
+				labels = labels.to(self.device)
 				outputs = self.forward(samples)
 				_, predicted = torch.max(outputs.data, 1)
 				total += labels.size(0)
 				correct += (predicted == labels).sum().item()
 		print('Accuracy of the network: %d %%' % (100 * correct/total))
+		return correct, total
 
 def main():
-	print('Hello, world')
-	cnn = CNN()
+	print("Cuda availability status:", torch.cuda.is_available())
+	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+	cnn = CNN(device)
+	
 	train, test, classes = load_dataset()
 	print('train', train)
 	cnn.fit(train)
 	cnn.validate(test)
-	#test_iter = iter(test)
-	#images, labels = test_iter.next()#Pega 4 amostras do dataset de teste
-	#imshow(torchvision.utils.make_grid(images))
-	#print('Ground truth: ', ' '.join("%5s" % classes[labels[j]] for j in range(4)))
-	#outputs = cnn.forward(images)
-	#_, predicted = torch.max(outputs, 1)
-	#print('Predicted ', ' '.join("%5s" % classes[labels[j]] for j in range(4)))
-	
 
 	return 0
 
