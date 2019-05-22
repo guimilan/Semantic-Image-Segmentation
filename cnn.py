@@ -109,7 +109,7 @@ def main():
 	validate(cnn, test, device)'''
 	alexnet = models.alexnet(pretrained=True)
 	print('alexnet', alexnet)
-	for param in alex.parameters():
+	for param in alexnet.parameters():
 		print('param', param)
 	return 0
 
