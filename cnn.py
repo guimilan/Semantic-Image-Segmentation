@@ -1,6 +1,7 @@
 import torch
 import torchvision
 import torchvision.transforms as transforms
+import torchvision.models as models
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
@@ -14,8 +15,8 @@ def imshow(img):
 	plt.show()
 
 def load_dataset(batch_size):
-	transform = transforms.Compose([transforms.ToTensor(), transforms.Normalize((0.5, 0.5, 0.5),(0.5, 0.5, 0.5))])
-	
+	transform = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225])	
 	train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
 	train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 	
@@ -66,8 +67,9 @@ def fit(model, train_dataset, device):
 
 			optimizer.zero_grad()#Zera o gradiente (se nao fizer isso, ele acumula e aplica o acumulado
 			#na hora de atualizar os pesos)
-			predicted = model(samples)#Pega a saida da rede
-			loss = criterion(predicted, labels)#Calcula o erro
+			output = model(samples)#Pega a saida da rede (faz forward pass. nao se chama o 
+			#forward pass diretamente em pytorch)
+			loss = criterion(output, labels)#Calcula o erro
 			loss.backward()#Faz backpropagation e calcula o quanto cada parametro deve ser otimizado
 			optimizer.step()#Atualiza cada parametro com os valores calculados no backpropagation
 
@@ -96,7 +98,7 @@ def validate(model, test_dataset, device):
 	return correct, total
 
 def main():
-	print("Cuda availability status:", torch.cuda.is_available())
+	'''print("Cuda availability status:", torch.cuda.is_available())
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 	train, test, classes = load_dataset(16)
 	cnn = CNN()
@@ -104,8 +106,11 @@ def main():
 	print('training')
 	fit(cnn, train, device)
 	print('validating')
-	validate(cnn, test, device)
-
+	validate(cnn, test, device)'''
+	alexnet = models.alexnet(pretrained=True)
+	print('alexnet', alexnet)
+	for param in alex.parameters():
+		print('param', param)
 	return 0
 
 if __name__ == '__main__':
