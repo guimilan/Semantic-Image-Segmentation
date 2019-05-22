@@ -17,6 +17,7 @@ def imshow(img):
 def load_dataset(batch_size):
 	transform = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                  std=[0.229, 0.224, 0.225])	
+								 
 	train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
 	train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 	
@@ -28,47 +29,51 @@ def load_dataset(batch_size):
 
 class CNN(nn.Module):
 	#Implementacao da AlexNet, baseada na implementacao do proprio pytorch
-	def __init__(self, num_classes=1000):
+	def __init__(self, num_classes=1000, alexnet=None):
 		super(CNN, self).__init__()
+		if(alexnet is not None):
+			self.features = alexnet.features
+			self.avgpool = alexnet.avgpool
+			self.classifier = alexnet.classifier
+		else:
+			self.features = nn.Sequential(
+				nn.Conv2d(3,64, kernel_size=11, stride=4, padding=2),#requires_grad=True por padrao
+				nn.ReLU(inplace=True),
+				nn.MaxPool2d(kernel_size=3, stride=2),
 
-		self.features = nn.Sequential(
-			nn.Conv2d(3,64, kernel_size=11, stride=4, padding=2),#requires_grad=True por padrao
-			nn.ReLU(inplace=True),
-			nn.MaxPool2d(kernel_size=3, stride=2),
+				nn.Conv2d(64, 192, kernel_size=5, padding=2),
+				nn.ReLU(inplace=True),
+				nn.MaxPool2d(kernel_size=3, stride=2),
 
-			nn.Conv2d(64, 192, kernel_size=5, padding=2),
-			nn.ReLU(inplace=True),
-			nn.MaxPool2d(kernel_size=3, stride=2),
+				nn.Conv2d(192, 384, kernel_size=3, padding=1),
+				nn.ReLU(inplace=True),
 
-			nn.Conv2d(192, 384, kernel_size=3, padding=1),
-			nn.ReLU(inplace=True),
+				nn.Conv2d(384, 256, kernel_size=3, padding=1),
+				nn.ReLU(inplace=True),
 
-			nn.Conv2d(384, 256, kernel_size=3, padding=1),
-			nn.ReLU(inplace=True),
+				nn.Conv2d(256, 256, kernel_size=3, padding=1),
+				nn.ReLU(inplace=True),
+				nn.MaxPool2d(kernel_size=3, stride=2),
+			)
+			self.avg_pool = nn.AdaptiveAvgPool2d((6,6))
 
-			nn.Conv2d(256, 256, kernel_size=3, padding=1),
-			nn.ReLU(inplace=True),
-			nn.MaxPool2d(kernel_size=3, stride=2),
-		)
+			self.classifier = nn.Sequential(
+				nn.Dropout(),
+				nn.Linear(256*6*6, 4096),
+				nn.ReLU(inplace=True),
+				
+				nn.Dropout(),
+				nn.Linear(4096, 4096),
+				nn.ReLU(inplace=True),
 
-		self.avg_pool = nn.AdaptiveAvgPool2d((6,6))
+				nn.Linear(4096, num_classes),
+			)
 
-		self.classifier = nn.Sequential(
-			nn.Dropout(),
-			nn.Linear(256*6*6, 4096),
-			nn.ReLU(inplace=True),
-			
-			nn.Dropout(),
-			nn.Linear(4096, 4096),
-			nn.ReLU(inplace=True),
-
-			nn.Linear(4096, num_classes),
-		)
 
 	def forward(self, x):
 		x = self.features(x)
 		x = self.avgpool(x)
-		x = x.view(x.size(0), 256*6*6)
+		x = x.view(x.size(0), -1) #-1 infere o tamanho
 		x = self.classifier(x)
 		return x
 
@@ -125,31 +130,29 @@ def validate(model, test_dataset, device):
 
 def main():
 	print("Cuda availability status:", torch.cuda.is_available())
-	train, test, classes = load_dataset(16)
-	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-
-	'''
 	print('setting device...')
 	torch.cuda.set_device(0)
 	print('device set')
-	print('instantiating model...')
-	cnn = CNN(len(classes))
-	print('sending to gpu')
+	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+	print("loading dataset")
+	train, test, classes = load_dataset(16)
+
+	print("dataset loaded. instantiating alexnet...")
+	alexnet = models.alexnet(pretrained=True)
+	print('alexnet instantiated. instantiating model...')
+	cnn = CNN(10, alexnet)
+	print('done. sending model to gpu')
 	cnn.cuda()
-	print('done')
+	print('sending successful. training...')
 	print('training')
 	fit(cnn, train, device)
-	print('validating')
-	validate(cnn, test, device)'''
+	#print('validating')
+	#validate(cnn, test, device)
 
-	print('instantiating alexnet')
-	alexnet = models.alexnet(pretrained=True)
-	print('sending alexnet to gpu')
-	alexnet.cuda()
-	print('done. validating')
-	'''validate(alexnet, test, device)
-	print('validated')'''
+
+	#validate(alexnet, test, device)
+	#print('validated')'''
 	return 0
 
 if __name__ == '__main__':
