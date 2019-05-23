@@ -15,9 +15,12 @@ def imshow(img):
 	plt.show()
 
 def load_dataset(batch_size):
-	transform = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                 std=[0.229, 0.224, 0.225])	
-								 
+	resize = transforms.Resize((224, 224))
+	toTensor = transforms.ToTensor()
+	normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+
+	transform = transforms.Compose([resize, toTensor, normalize])	
+
 	train_dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
 	train_loader = torch.utils.data.DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=2)
 	
@@ -55,7 +58,11 @@ class CNN(nn.Module):
 				nn.ReLU(inplace=True),
 				nn.MaxPool2d(kernel_size=3, stride=2),
 			)
-			self.avg_pool = nn.AdaptiveAvgPool2d((6,6))
+
+			for param in self.features.parameters():
+				param.requires_grad = False
+
+			self.avg_pool = nn.AdaptiveAvgPool2d((6,6), requires_grad=False)
 
 			self.classifier = nn.Sequential(
 				nn.Dropout(),
@@ -119,8 +126,7 @@ def validate(model, test_dataset, device):
 	with torch.no_grad():
 		for data in test_dataset:
 			samples, labels = data
-			samples = samples.to(device)
-			labels = labels.to(device)
+			samples, labels = samples.to(device), labels.to(device)
 			outputs = model.forward(samples)
 			_, predicted = torch.max(outputs.data, 1)
 			total += labels.size(0)
@@ -141,15 +147,14 @@ def main():
 	print("dataset loaded. instantiating alexnet...")
 	alexnet = models.alexnet(pretrained=True)
 	print('alexnet instantiated. instantiating model...')
-	cnn = CNN(10, alexnet)
+	cnn = CNN(len(classes), alexnet)
 	print('done. sending model to gpu')
 	cnn.cuda()
 	print('sending successful. training...')
 	print('training')
 	fit(cnn, train, device)
-	#print('validating')
-	#validate(cnn, test, device)
-
+	print('validating')
+	validate(cnn, test, device)
 
 	#validate(alexnet, test, device)
 	#print('validated')'''
