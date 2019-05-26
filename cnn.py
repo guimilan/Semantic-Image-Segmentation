@@ -7,6 +7,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
+import utils
 
 def imshow(img):
 	img = img / 2 + 0.5     # unnormalize
@@ -34,52 +35,76 @@ class CNN(nn.Module):
 	#Implementacao da AlexNet, baseada na implementacao do proprio pytorch
 	def __init__(self, num_classes=1000, alexnet=None):
 		super(CNN, self).__init__()
-		if(alexnet is not None):
-			self.features = alexnet.features
-			self.avgpool = alexnet.avgpool
-			self.classifier = alexnet.classifier
-		else:
-			self.features = nn.Sequential(
-				nn.Conv2d(3,64, kernel_size=11, stride=4, padding=2),#requires_grad=True por padrao
-				nn.ReLU(inplace=True),
-				nn.MaxPool2d(kernel_size=3, stride=2),
+		#Quebrando a alexnet nos fragmentos que modificam a dimensao da entrada
+		#Isto eh feito para permitir pegar a saida de cada fragmento durante o forward pass,
+		#podendo, entao, fazer a skip connection das camadas no inicio da rede com as camadas no final
+		#percententes a mesma faixa de tamanho
 
-				nn.Conv2d(64, 192, kernel_size=5, padding=2),
-				nn.ReLU(inplace=True),
-				nn.MaxPool2d(kernel_size=3, stride=2),
-
-				nn.Conv2d(192, 384, kernel_size=3, padding=1),
-				nn.ReLU(inplace=True),
-
-				nn.Conv2d(384, 256, kernel_size=3, padding=1),
-				nn.ReLU(inplace=True),
-
-				nn.Conv2d(256, 256, kernel_size=3, padding=1),
-				nn.ReLU(inplace=True),
-				nn.MaxPool2d(kernel_size=3, stride=2),
-			)
-
-			for param in self.features.parameters():
+		#faixas de tamanho: 227x227, 55x55, 27x27, 13x13 e 6x6
+		self.input_conv = alexnet.features[0] #conv2d(227x227x3, 55x55x64, kernel=11x11, stride=4, padding=2)
+		self.first_conv = nn.Sequential(
+			alexnet.features[1],#relu
+			alexnet.features[2],#maxpool2d(55x55x64, 27x27x64, kernel 3x3, stride=2, padding=0)
+		)
+		self.second_conv = nn.Sequential (
+			alexnet.features[3],#conv2d(27x27x64, 27x27x192, kernel=5x5, stride=1, padding=1)
+			alexnet.features[4],#relu
+			alexnet.features[5],#maxpool2d(27x27x192, 13x13x192, kernel=3x3, stride=2, padding=0)
+		)
+		self.third_conv = nn.Sequential (
+			alexnet.features[6],#conv2d(13x13x192, 13x13x384, kernel=3x3, stride=1, padding=1)
+			alexnet.features[7],#relu
+		)
+		self.fourth_conv = nn.Sequential (
+			alexnet.features[8],#conv2d(13x13x384, 13x13x256, kernel=3x3, stride=1, padding=1)
+			alexnet.features[9]#relu
+		)
+		self.fifth_conv = nn.Sequential (
+			alexnet.features[10],#conv2d(13x13x256, 13x13x256, kernel=3x3, stride=1, padding=1)
+			alexnet.features[11],#relu
+		)
+		self.sixth_conv = alexnet.features[12]#maxpool2d(13x13x256, 6x6x256, kernel=3x3, stride=2)
+		
+		'''if(alexnet is not None):
+			self.alexnet = alexnet.features
+			for param in self.alexnet.parameters():
 				param.requires_grad = False
-
-			self.avg_pool = nn.AdaptiveAvgPool2d((6,6), requires_grad=False)
-
-			self.classifier = nn.Sequential(
-				nn.Dropout(),
-				nn.Linear(256*6*6, 4096),
+		else:
+			self.alexnet = nn.Sequential(
+				#requires_grad=True por padrao
+				nn.Conv2d(3,64, kernel_size=11, stride=4, padding=2),#dim da saida: 55x55x64
 				nn.ReLU(inplace=True),
-				
-				nn.Dropout(),
-				nn.Linear(4096, 4096),
+				nn.MaxPool2d(kernel_size=3, stride=2),#dim da saida: 27x27x64
+
+				nn.Conv2d(64, 192, kernel_size=5, padding=2),#dim da saida: 27x27x192
+				nn.ReLU(inplace=True),
+				nn.MaxPool2d(kernel_size=3, stride=2),#dim da saida: 13x13x192
+
+				nn.Conv2d(192, 384, kernel_size=3, padding=1),#dim da saida: 13x13x384
 				nn.ReLU(inplace=True),
 
-				nn.Linear(4096, num_classes),
-			)
+				nn.Conv2d(384, 256, kernel_size=3, padding=1),#dim da saida: 13x13x256
+				nn.ReLU(inplace=True),
 
+				nn.Conv2d(256, 256, kernel_size=3, padding=1),#dim da saida: 13x13x256
+				nn.ReLU(inplace=True),
+				nn.MaxPool2d(kernel_size=3, stride=2),#dim da saida: 6x6x256
+			)'''
+
+		#entrada: 6x6x256, saida: 13x13x256
+		self.Deconv1 = nn.ConvTranspose2d(256, 256, kernel_size=3, stride=2)
+		#entrada: 13x13x256 (ligar com a saida da fifth_conv), saida: 27x27x64
+		self.Deconv2 = nn.ConvTranspose2d(384, 64, kernel_size=3, stride=2)
+		#entrada: 27x27x64 (ligar com a saida da first_conv), saida: 55x55x64
+		self.Deconv3 = nn.ConvTranspose2d(192, 64, kernel_size=3, stride=2)
+		#entrada: 55x55x64 (ligar com a saida da input_conv (renomear pra first_conv, corrigir nome das
+		# outras camadas. first_conv atual vira second_conv e assim por diante)), saida: 227x227xnum_classes
+		self.Deconv3 = nn.ConvTranspose2d(192, num_classes, kernel_size=11, stride=4)
+		#Checar se precisar de uma convolucao que nao altera h, w e d na camada de saida
 
 	def forward(self, x):
 		x = self.features(x)
-		x = self.avgpool(x)
+		x = self.alexnet(x)
 		x = x.view(x.size(0), -1) #-1 infere o tamanho
 		x = self.classifier(x)
 		return x
