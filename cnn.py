@@ -42,7 +42,7 @@ class CNN(nn.Module):
 
 		#faixas de tamanho: 227x227, 55x55, 27x27, 13x13 e 6x6
 		self.conv1 = nn.Sequential(
-			alexnet.features[0], #conv2d(227x227x3, 55x55x64, kernel=11x11, stride=4, padding=2)
+			alexnet.features[0],#conv2d(227x227x3, 55x55x64, kernel=11x11, stride=4, padding=2)
 			alexnet.features[1],#relu
 			alexnet.features[2],#maxpool2d(55x55x64, 27x27x64, kernel 3x3, stride=2, padding=0) pool 1
 		)
@@ -104,14 +104,13 @@ class CNN(nn.Module):
 		#Checar se precisar de uma convolucao que nao altera h, w e d na camada de saida
 
 	def forward(self, x):
-		x = self.conv1(x)
-		x = self.conv2(x)
-		x = self.conv3(x)
-		x = self.conv4(x)
-		x = self.conv5(x)
-		x = self.conv6(x)
-		x = self.conv7(x)
-		x = self.score_conv(x)
+		out_conv1 = self.conv1(x)
+		out_conv2 = self.conv2(x)
+		out_conv3 = self.conv3(x)
+		out_conv4 = self.conv4(x)
+		out_conv5 = self.conv5(x)
+		out_conv6 = self.conv6(x)
+		out_score_conv = self.score_conv(x)
 		x = self.deconv1(x)
 		x = self.deconv2(x)
 		x = self.deconv3(x)

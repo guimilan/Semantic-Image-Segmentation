@@ -22,11 +22,11 @@ segmented medical images by the Computer Vision Center (CVC) of Barcelona[2], an
 
 <img src="https://i.ibb.co/NNk3Vyf/polyp.png" alt="Polyp sample" width="200" height="200">
 
-Sample 1 - Medical image from the Polyp-7 dataset
+Medical image sample from the Polyp-7 dataset
 
-<image src="https://i.ibb.co/G3xZV6S/street-segment.png" alt="CamVid sample" width="200" height="200">
+<img src="https://i.ibb.co/G3xZV6S/street-segment.png" alt="CamVid sample" width="200" height="200">
 
-Sample 2 - Public street image from the CamVid dataset
+Public street image sample from the CamVid dataset
 
 ## 2. Development plan
 
@@ -44,11 +44,11 @@ Work started with the survey of existing semantic segmentation models. The FCN-b
 
 FCN-based models have been developed on top of several different architectures, notably AlexNet and VGG. The layers of a FCN-Alexnet have been implemented on PyTorch, as shown below.
 
-Additionally, an Alexnet has been successfully loaded, its layers frozen and fine tuned for classification on a smaller dataset with an accuracy rating of 85%, which is about the reported accuracy value for the ALexnet. The code to replace the FCN-Alexnet's default layers with the ones loaded from the pretrained Alexnet is already functional. 
+Additionally, a pretrained Alexnet has been successfully loaded, its layers frozen and fine tuned for classification on a smaller dataset with an accuracy rating of 85%, which is about the reported accuracy value for the Alexnet. The code to replace the FCN-Alexnet's default layers with the ones loaded from the pretrained Alexnet is already functional. 
 
-COCO provides its segmentation masks in a compressed, encoded format. In order to make training easier, 
+COCO provides its segmentation masks in a compressed, encoded format. Performing decoding and coupling each mask with its corresponding image during training would result in additional computational effort to an already intensive task. Thus, our efforts are now focused on generating a new dataset, composed of fully segmented images ready to use as ground truth.
 
-Finally, the code for training on MS Coco will be written, and functionality for fine tuning for smaller datasets will be implemented as time allows.
+Planned next steps include writing the code for training on MS Coco, completing the basic data pipeline that would allow proper experimentation to begin. This will be followed by tweaks to the architecture and fine tuning to specific tasks, such as medical image and street image segmentation. Finally, training on VGG-based FCNs (FCN-32, FCN-16 and FCN-8) will be tested, provided there's enough time left.
 
 ## References
 [1]COCO - Common Objects in Context. Available on http://cocodataset.org/
