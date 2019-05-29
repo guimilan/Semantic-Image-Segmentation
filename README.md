@@ -14,9 +14,10 @@ For the purpose of training the network, the MS Coco dataset will be used [1]. I
 pictures displaying common objects, such as the sample below.
 
 Sample 1
+![GitHub Logo](https://ibb.co/3F8srCV)
 
 It is expected that the image quantity and diversity will enable the model to capture general features. This should, in turn, allow fine tuning on smaller datasets to achieve reasonable performance. Two such datasets include Polyp-7, comprised of 
-segmented medical images by the Computer Vision Center (CVC) of Barcelona[2], and CamVid[3], which provides segmented videos and still images of streets during daylight.
+segmented medical images by the Computer Vision Center (CVC) of Barcelona[2], and CamVid[3], which provides segmented videos and still images of public streets during daylight.
 
 Sample 2 (caption: Polyp-7 image sample), sample 3 (caption: CamVid)
 
@@ -32,12 +33,11 @@ Implementation will be done on PyTorch using CUDA.
 
 ## 3. Progress report
 
-Work started with the survey of existing semantic segmentation models. The FCN-based architectures were deemed the most reasonable for the proposed deadline. These models have been developed on top of several different architecture, notably AlexNet and VGG
+Work started with the survey of existing semantic segmentation models. The FCN-based architectures were deemed the most reasonable for the proposed deadline, due 
 
-The layers of a FCN-Alexnet have been implemented on PyTorch, as shown below.
+FCN-based models have been developed on top of several different architectures, notably AlexNet and VGG. The layers of a FCN-Alexnet have been implemented on PyTorch, as shown below.
 
 Additionally, an Alexnet has been successfully loaded, its layers frozen and fine tuned for classification on a smaller dataset with good performance. The code to replace the FCN-Alexnet's default layers with the ones loaded from the pretrained Alexnet is already functional. 
-
 
 The current step is to load the data from MS Coco's encoded format and present it to the network in a way that makes pixelwise prediction possible. 
 
