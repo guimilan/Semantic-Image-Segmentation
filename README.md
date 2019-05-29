@@ -13,11 +13,11 @@ The aim of this project is to investigate the implementation and the application
 For the purpose of training the network, the MS Coco dataset will be used [1]. It contains a wide range of
 pictures displaying common objects, such as the sample below.
 
-Sample 1
-![GitHub Logo](https://i.ibb.co/NNk3Vyf/polyp.png)
 
 It is expected that the image quantity and diversity will enable the model to capture general features. This should, in turn, allow fine tuning on smaller datasets to achieve reasonable performance. Two such datasets include Polyp-7, comprised of 
 segmented medical images by the Computer Vision Center (CVC) of Barcelona[2], and CamVid[3], which provides segmented videos and still images of public streets during daylight.
+
+![Polyp sample](https://i.ibb.co/NNk3Vyf/polyp.png =250x250)
 
 Sample 2 (caption: Polyp-7 image sample), sample 3 (caption: CamVid)
 
