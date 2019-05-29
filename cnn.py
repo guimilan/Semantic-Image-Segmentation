@@ -15,7 +15,7 @@ def imshow(img):
 	plt.imshow(np.transpose(npimg, (1, 2, 0)))
 	plt.show()
 
-def load_dataset(batch_size):
+def load_cifar10(batch_size):
 	resize = transforms.Resize((224, 224))
 	toTensor = transforms.ToTensor()
 	normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
@@ -41,30 +41,31 @@ class CNN(nn.Module):
 		#percententes a mesma faixa de tamanho
 
 		#faixas de tamanho: 227x227, 55x55, 27x27, 13x13 e 6x6
-		self.input_conv = alexnet.features[0] #conv2d(227x227x3, 55x55x64, kernel=11x11, stride=4, padding=2)
-		self.first_conv = nn.Sequential(
+		self.conv1 = nn.Sequential(
+			alexnet.features[0], #conv2d(227x227x3, 55x55x64, kernel=11x11, stride=4, padding=2)
 			alexnet.features[1],#relu
-			alexnet.features[2],#maxpool2d(55x55x64, 27x27x64, kernel 3x3, stride=2, padding=0)
+			alexnet.features[2],#maxpool2d(55x55x64, 27x27x64, kernel 3x3, stride=2, padding=0) pool 1
 		)
-		self.second_conv = nn.Sequential (
+		self.conv2 = nn.Sequential (
 			alexnet.features[3],#conv2d(27x27x64, 27x27x192, kernel=5x5, stride=1, padding=1)
 			alexnet.features[4],#relu
-			alexnet.features[5],#maxpool2d(27x27x192, 13x13x192, kernel=3x3, stride=2, padding=0)
+			alexnet.features[5],#maxpool2d(27x27x192, 13x13x192, kernel=3x3, stride=2, padding=0) pool 2
 		)
-		self.third_conv = nn.Sequential (
+		self.conv3 = nn.Sequential (
 			alexnet.features[6],#conv2d(13x13x192, 13x13x384, kernel=3x3, stride=1, padding=1)
 			alexnet.features[7],#relu
 		)
-		self.fourth_conv = nn.Sequential (
+		self.conv4 = nn.Sequential (
 			alexnet.features[8],#conv2d(13x13x384, 13x13x256, kernel=3x3, stride=1, padding=1)
 			alexnet.features[9]#relu
 		)
-		self.fifth_conv = nn.Sequential (
+		self.conv5 = nn.Sequential (
 			alexnet.features[10],#conv2d(13x13x256, 13x13x256, kernel=3x3, stride=1, padding=1)
 			alexnet.features[11],#relu
 		)
-		self.sixth_conv = alexnet.features[12]#maxpool2d(13x13x256, 6x6x256, kernel=3x3, stride=2)
+		self.conv6 = alexnet.features[12]#maxpool2d(13x13x256, 6x6x256, kernel=3x3, stride=2) pool 3
 		
+		self.score_conv = nn.Conv2d(256, num_classes, 1)
 		'''if(alexnet is not None):
 			self.alexnet = alexnet.features
 			for param in self.alexnet.parameters():
@@ -92,21 +93,29 @@ class CNN(nn.Module):
 			)'''
 
 		#entrada: 6x6x256, saida: 13x13x256
-		self.Deconv1 = nn.ConvTranspose2d(256, 256, kernel_size=3, stride=2)
-		#entrada: 13x13x256 (ligar com a saida da fifth_conv), saida: 27x27x64
-		self.Deconv2 = nn.ConvTranspose2d(384, 64, kernel_size=3, stride=2)
+		self.deconv1 = nn.ConvTranspose2d(256, 256, kernel_size=3, stride=2)
+		#entrada: 13x13x256 (ligar com a saida da conv5), saida: 27x27x64
+		self.deconv2 = nn.ConvTranspose2d(384, 64, kernel_size=3, stride=2)
 		#entrada: 27x27x64 (ligar com a saida da first_conv), saida: 55x55x64
-		self.Deconv3 = nn.ConvTranspose2d(192, 64, kernel_size=3, stride=2)
+		self.deconv3 = nn.ConvTranspose2d(192, 64, kernel_size=3, stride=2)
 		#entrada: 55x55x64 (ligar com a saida da input_conv (renomear pra first_conv, corrigir nome das
 		# outras camadas. first_conv atual vira second_conv e assim por diante)), saida: 227x227xnum_classes
-		self.Deconv3 = nn.ConvTranspose2d(192, num_classes, kernel_size=11, stride=4)
+		self.deconv4 = nn.ConvTranspose2d(192, num_classes, kernel_size=11, stride=4)
 		#Checar se precisar de uma convolucao que nao altera h, w e d na camada de saida
 
 	def forward(self, x):
-		x = self.features(x)
-		x = self.alexnet(x)
-		x = x.view(x.size(0), -1) #-1 infere o tamanho
-		x = self.classifier(x)
+		x = self.conv1(x)
+		x = self.conv2(x)
+		x = self.conv3(x)
+		x = self.conv4(x)
+		x = self.conv5(x)
+		x = self.conv6(x)
+		x = self.conv7(x)
+		x = self.score_conv(x)
+		x = self.deconv1(x)
+		x = self.deconv2(x)
+		x = self.deconv3(x)
+		x = self.deconv4(x)
 		return x
 
 def fit(model, train_dataset, device):
@@ -167,7 +176,7 @@ def main():
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 	print("loading dataset")
-	train, test, classes = load_dataset(16)
+	train, test, classes = load_cifar10(16)
 
 	print("dataset loaded. instantiating alexnet...")
 	alexnet = models.alexnet(pretrained=True)
