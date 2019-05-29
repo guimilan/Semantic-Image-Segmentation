@@ -1,3 +1,10 @@
 data/
 .vscode/
 venv/
+coco/
+polyps_split7/
+BSR/
+annotations_Trainval2014.zip
+polyps_split7.zip
+train2014.zip
+BSR_bsds500.tar
