@@ -20,7 +20,9 @@ segmented medical images by the Computer Vision Center (CVC) of Barcelona[2], an
 
 <img src="https://i.ibb.co/NNk3Vyf/polyp.png" alt="Polyp sample" width="200" height="200">
 
-Sample 2 (caption: Polyp-7 image sample), sample 3 (caption: CamVid)
+Sample image from Polyp-7
+
+Sample image from CamVid
 
 ## 2. Development plan
 
@@ -34,7 +36,7 @@ Implementation will be done on PyTorch using CUDA.
 
 ## 3. Progress report
 
-Work started with the survey of existing semantic segmentation models. The FCN-based architectures were deemed the most reasonable for the proposed deadline, due 
+Work started with the survey of existing semantic segmentation models. The FCN-based architectures were deemed the most reasonable for the proposed deadline, both due to the relative ease of comprehension and implementation, as well to the computational power required in comparison with more recent models. 
 
 FCN-based models have been developed on top of several different architectures, notably AlexNet and VGG. The layers of a FCN-Alexnet have been implemented on PyTorch, as shown below.
 
@@ -44,8 +46,11 @@ The current step is to load the data from MS Coco's encoded format and present i
 
 Finally, the code for training on MS Coco will be written, and functionality for fine tuning for will be implemented as time allows.
 
-References
+## References
 [1]COCO - Common Objects in Context. Available on http://cocodataset.org/
+
 [2]A benchmark for Endoluminal Scene Segmentation of Colonoscopy Images. Available on https://arxiv.org/pdf/1612.00799.pdf
+
 [3]Motion-based Segmentation and Recognition Dataset. Available on mi.eng.cam.ac.uk/research/projects/VideoRec/CamVid/
+
 [4]Fully Convolutional Networks for Semantic Segmentation. Available on https://arxiv.org/abs/1411.4038
