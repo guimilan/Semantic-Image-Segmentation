@@ -11,8 +11,9 @@ The aim of this project is to investigate the implementation and the application
 ## 1. Image sets
 
 For the purpose of training the network, the MS Coco dataset will be used [1]. It contains a wide range of
-pictures displaying common objects, such as the sample below.
+pictures displaying common objects, such as the sample below, as well as the ground truth containing each image's  segmentation masks.
 
+Sample image from Coco
 
 It is expected that the image quantity and diversity will enable the model to capture general features. This should, in turn, allow fine tuning on smaller datasets to achieve reasonable performance. Two such datasets include Polyp-7, comprised of 
 segmented medical images by the Computer Vision Center (CVC) of Barcelona[2], and CamVid[3], which provides segmented videos and still images of public streets during daylight.
@@ -21,6 +22,8 @@ segmented medical images by the Computer Vision Center (CVC) of Barcelona[2], an
 <img src="https://i.ibb.co/NNk3Vyf/polyp.png" alt="Polyp sample" width="200" height="200">
 
 Sample image from Polyp-7
+
+<image src="" alt="CamVid sample" width="200" height="200">
 
 Sample image from CamVid
 
