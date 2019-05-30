@@ -1,6 +1,7 @@
 data/
 .vscode/
 venv/
+.ipynb_checkpoints/
 coco/
 polyps_split7/
 BSR/
