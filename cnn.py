@@ -12,6 +12,8 @@ import utils
 from pathlib import Path
 import glob
 from PIL import Image
+import os
+import imageio
 
 #plots an image
 def imshow(img):
@@ -162,29 +164,28 @@ def validate(model, test_dataset, device):
 
 #Class representing the dataset
 class CocoDataset(Dataset):
-	def __init__(self, image_dir, gt_dir, qtt):
+	def __init__(self, image_dir, gt_dir, qtt, transform):
 		self.image_dir = image_dir
 		self.gt_dir = gt_dir
-		self.file_names = [f for f in glob.glob(gt_dir+"\\*.jpg")]
-		#print('file names', self.file_names[:3])
-		self.transform = transforms.Compose([
-			transforms.Resize((480, 640)),
-			transforms.ToTensor(),
-		])
+		self.transform = transform
+		self.file_names = [os.path.basename(f) for f in glob.glob(image_dir+"\\*.jpg")]
 
-		self.images = torch.IntTensor(qtt, 1, 480, 640).zero_()
+		self.images = torch.IntTensor(qtt, 3, 480, 640).zero_()
+		self.gts = torch.IntTensor(qtt, 1, 480, 640).zero_()
+
 		for i in range(self.images.shape[0]):
-			print('image index', i)
-			image = Image.open(self.file_names[i])
-			self.images[i] = self.transform(image)
-		print('total images loaded', self.images.size())
+			self.images[i] = self.transform(np.array(Image.open(self.image_dir+"\\"+self.file_names[i])))
+			self.gts[i] = self.transform(np.array(Image.open(self.gt_dir+"\\"+self.file_names[i])))
 
-	def __getitem__(self, id):
-		return self.images[id]
+	def __getitem__(self, i):
+		return self.images[i], self.gts[i]
 
 	def __len__(self):
 		return self.images.size()
 
+def plot_tensor(tensor):
+	plt.imshow(transforms.ToPILImage()(tensor), interpolation="bicubic")
+	plt.show()
 #Main code for training (still using legacy code for alexnet finetuning and classification)
 #Presently under modification
 def main():
@@ -194,8 +195,27 @@ def main():
 	torch.cuda.set_device(0)
 	print('device set')
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+	transform = transforms.Compose([
+		transforms.Resize((480, 640)),
+		transforms.ToTensor(),
+	])
+	coco = CocoDataset("coco\\images", "coco\\ground_truth", 24, transform)
+	image, gt = coco[1]
+	vec = gt.numpy()
+	print('unique values from converting from tensor', np.unique(vec))
 	
-	coco = CocoDataset("coco\\images", "coco\\ground_truth", 24)
+	print('loading with numpy')
+	sample = imageio.imread("coco\\ground_truth\\"+coco.file_names[0])
+	plt.imshow(sample)
+	plt.show()
+	print('unique values from loading with numpy', np.unique(sample))
+	
+	print('loading with pillow')
+	sample = np.array(Image.open("coco\\ground_truth\\"+coco.file_names[0]))
+	plt.imshow(sample)
+	plt.show()
+	print('unique values from loading with pillow', np.unique(sample))
 	'''
 	#loads cifar10 data
 	print("loading dataset")
