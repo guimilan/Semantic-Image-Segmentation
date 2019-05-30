@@ -2,12 +2,16 @@ import torch
 import torchvision
 import torchvision.transforms as transforms
 import torchvision.models as models
+from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import matplotlib.pyplot as plt
 import numpy as np
 import utils
+from pathlib import Path
+import glob
+from PIL import Image
 
 #plots an image
 def imshow(img):
@@ -68,7 +72,7 @@ class CNN(nn.Module):
 		)
 		self.conv6 = alexnet.features[12]#maxpool2d(13x13x256, 6x6x256, kernel=3x3, stride=2) pool 3
 		for param in self.parameters():
-			param.required_grad = False
+			param.requires_grad = False
 
 		#size-1 convolution for pixel-by-pixel prediction
 		self.score_conv = nn.Conv2d(256, num_classes, 1)
@@ -156,6 +160,31 @@ def validate(model, test_dataset, device):
 	print('Accuracy of the network: %d %%' % (100 * correct/total))
 	return correct, total
 
+#Class representing the dataset
+class CocoDataset(Dataset):
+	def __init__(self, image_dir, gt_dir, qtt):
+		self.image_dir = image_dir
+		self.gt_dir = gt_dir
+		self.file_names = [f for f in glob.glob(gt_dir+"\\*.jpg")]
+		#print('file names', self.file_names[:3])
+		self.transform = transforms.Compose([
+			transforms.Resize((480, 640)),
+			transforms.ToTensor(),
+		])
+
+		self.images = torch.IntTensor(qtt, 1, 480, 640).zero_()
+		for i in range(self.images.shape[0]):
+			print('image index', i)
+			image = Image.open(self.file_names[i])
+			self.images[i] = self.transform(image)
+		print('total images loaded', self.images.size())
+
+	def __getitem__(self, id):
+		return self.images[id]
+
+	def __len__(self):
+		return self.images.size()
+
 #Main code for training (still using legacy code for alexnet finetuning and classification)
 #Presently under modification
 def main():
@@ -165,7 +194,9 @@ def main():
 	torch.cuda.set_device(0)
 	print('device set')
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
+	
+	coco = CocoDataset("coco\\images", "coco\\ground_truth", 24)
+	'''
 	#loads cifar10 data
 	print("loading dataset")
 	train, test, classes = load_cifar10(16)
@@ -174,12 +205,12 @@ def main():
 	print("dataset loaded. instantiating alexnet...")
 	alexnet = models.alexnet(pretrained=True)
 	print('alexnet instantiated. instantiating model...')
-	cnn = CNN(len(classes), alexnet)
+	cnn = CNN(10, alexnet)
 
-	#Sends the network to the GPU
+	#Sends the network to the GPU (if one if available. otherwise, retains it on the CPU)
 	print('done. sending model to gpu')
-	cnn.cuda()
-	print('sending successful. training...')
+	cnn.to(device)
+	print('successfully sent. begin training...')	
 	
 	#Performs training
 	print('training')
