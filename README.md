@@ -48,7 +48,7 @@ Up to this point, a pretrained Alexnet has been successfully loaded, its layers 
 
 COCO provides its segmentation masks in a compressed, encoded format. Performing decoding and coupling each mask with its corresponding image during training would result in additional computational effort to an already intensive task. Thus, our efforts are now focused on generating a new dataset, composed of fully segmented images ready to use as ground truth.
 
-Planned next steps include writing the code for training on MS Coco, completing the basic data pipeline that would allow proper experimentation to begin. This will be followed by tweaks to the architecture and fine tuning to specific tasks, such as medical image and street image segmentation. Finally, training on VGG-based FCNs (FCN-32, FCN-16 and FCN-8) will be tested, provided there's enough time left.
+Planned next steps include writing the code for training on MS Coco, which should complete the basic data pipeline that would allow proper experimentation to begin. This will be followed by tweaks to the architecture and fine tuning to specific tasks, such as medical image and street image segmentation. Finally, training on VGG-based FCNs (FCN-32, FCN-16 and FCN-8) will be tested, provided there's enough time left.
 
 ## References
 [1]COCO - Common Objects in Context. Available on http://cocodataset.org/

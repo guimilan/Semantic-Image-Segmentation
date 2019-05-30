@@ -9,12 +9,16 @@ import matplotlib.pyplot as plt
 import numpy as np
 import utils
 
+#plots an image
 def imshow(img):
 	img = img / 2 + 0.5     # unnormalize
 	npimg = img.numpy()
 	plt.imshow(np.transpose(npimg, (1, 2, 0)))
 	plt.show()
 
+#(legacy code)Loads the cifar10 dataset for image classification
+#this was used to test fine-tuning a pretrained alexnet, and also
+#to learn the tools for data loading in pytorch
 def load_cifar10(batch_size):
 	resize = transforms.Resize((224, 224))
 	toTensor = transforms.ToTensor()
@@ -33,6 +37,8 @@ def load_cifar10(batch_size):
 
 class CNN(nn.Module):
 	#Alexnet-based FCN implementation
+	#for the sake of simplicity, at first the input will have an assumed dimension
+	#of 227x227x3
 	def __init__(self, num_classes=1000, alexnet=None):
 		super(CNN, self).__init__()
 
@@ -64,31 +70,37 @@ class CNN(nn.Module):
 		for param in self.parameters():
 			param.required_grad = False
 
+		#size-1 convolution for pixel-by-pixel prediction
 		self.score_conv = nn.Conv2d(256, num_classes, 1)
 
+		#Deconvolution layers for restoring the original image
 		#input: 6x6x256, output: 13x13x256
 		self.deconv1 = nn.ConvTranspose2d(256, 256, kernel_size=3, stride=2)
+		
 		#input: 13x13x256 (skip-connect to conv5's output), output: 27x27x64
 		self.deconv2 = nn.ConvTranspose2d(384, 64, kernel_size=3, stride=2)
+		
 		#input: 27x27x64 (skip-connect to conv1's output), output: 55x55x64
 		self.deconv3 = nn.ConvTranspose2d(192, 64, kernel_size=3, stride=2)
+		
 		#input: 55x55x64, output: 227x227xnum_classes
 		self.deconv4 = nn.ConvTranspose2d(192, num_classes, kernel_size=11, stride=4)
-		#Checar se precisar de uma convolucao que nao altera h, w e d na camada de saida
 
 	def forward(self, x):
+		#Forward passes the data
+		#Skip connections are formed by summing together the two connected layers' output 
 		out_conv1 = self.conv1(x)
-		out_conv2 = self.conv2(x)
-		out_conv3 = self.conv3(x)
-		out_conv4 = self.conv4(x)
-		out_conv5 = self.conv5(x)
-		out_conv6 = self.conv6(x)
-		out_score_conv = self.score_conv(x)
-		x = self.deconv1(x)
-		x = self.deconv2(x)
-		x = self.deconv3(x)
-		x = self.deconv4(x)
-		return x
+		out_conv2 = self.conv2(out_conv1)
+		out_conv3 = self.conv3(out_conv2)
+		out_conv4 = self.conv4(out_conv3)
+		out_conv5 = self.conv5(out_conv4)
+		out_conv6 = self.conv6(out_conv5)
+		out_score_conv = self.score_conv(out_conv6)
+		out_deconv1 = self.deconv1(out_score_conv)
+		out_deconv2 = self.deconv2(out_deconv1+out_conv5)
+		out_deconv3 = self.deconv3(out_deconv2+out_conv1)
+		out_deconv4 = self.deconv4(out_deconv3)
+		return out_deconv4
 
 def fit(model, train_dataset, device):
 	criterion = nn.CrossEntropyLoss()#Funcao de erro: entropia cruzada
