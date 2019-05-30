@@ -30,7 +30,7 @@ Public street image sample from the CamVid dataset
 
 ## 2. Development plan
 
-Studies will focus on the FCN architecture. This network constitutes of two main sections: convolution for feature extraction and deconvolution for generating the segmentation masks. In some versions of the network (FC-8 and FC-16), these two sections are also interconnected by skip layers. These are added with the goal of allowing the segmentation layers to produce finer masks by combining lower level, global information from earlier layers with fine-grained, local information from later layers.
+Studies will focus on the FCN architecture. This network is comprised of two main sections: convolution for feature extraction and deconvolution for segmentation mask generation. In some versions of the network (FC-8 and FC-16), these two sections are also interconnected by skip layers. These are added with the goal of allowing the segmentation layers to produce finer masks by combining lower level, global information from earlier layers with fine-grained, local information from later layers.
 
 For the first section of the network, the original paper [4] made use of the convolutional layers of a pretrained Alexnet. Thus, in order to save time, transfer learning will be performed, by taking and freezing the convolutional layers of such a network trained on the Imagenet dataset, like the one provided by torchvision [5]. The rest of the network will then be trained on MS Coco. Subsequently, for the smaller datasets, only the final layer will be fine tuned instead of training the whole network again.
 
@@ -42,9 +42,9 @@ Implementation will be done on PyTorch using CUDA.
 
 Work started with the survey of existing semantic segmentation models. The FCN-based architectures were deemed the most reasonable for the proposed deadline, both due to the relative ease of comprehension and implementation, as well to the computational power required in comparison with more recent models. 
 
-FCN-based models have been developed on top of several different architectures, notably AlexNet and VGG. The layers of a FCN-Alexnet have been implemented on PyTorch, as shown below.
+FCN-based models have been developed on top of several different architectures, notably AlexNet and VGG. For this work, the chosen approach was to take a pretrained Alexnet, and gradually add the layers that turn it into a FCN.
 
-Additionally, a pretrained Alexnet has been successfully loaded, its layers frozen and fine tuned for classification on a smaller dataset with an accuracy rating of 85%, which is about the reported accuracy value for the Alexnet. The code to replace the FCN-Alexnet's default layers with the ones loaded from the pretrained Alexnet is already functional. 
+Up to this point, a pretrained Alexnet has been successfully loaded, its layers frozen and fine tuned for classification on a smaller dataset with an accuracy rating of 85%, which is about the reported accuracy value for the Alexnet. Most recently, the classification layers were removed to make way to the first deconvolution layers.
 
 COCO provides its segmentation masks in a compressed, encoded format. Performing decoding and coupling each mask with its corresponding image during training would result in additional computational effort to an already intensive task. Thus, our efforts are now focused on generating a new dataset, composed of fully segmented images ready to use as ground truth.
 
