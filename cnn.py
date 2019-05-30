@@ -72,8 +72,7 @@ class CNN(nn.Module):
 		self.deconv2 = nn.ConvTranspose2d(384, 64, kernel_size=3, stride=2)
 		#input: 27x27x64 (skip-connect to conv1's output), output: 55x55x64
 		self.deconv3 = nn.ConvTranspose2d(192, 64, kernel_size=3, stride=2)
-		#input: 55x55x64 (ligar com a saida da input_conv (renomear pra first_conv, corrigir nome das
-		# outras camadas. first_conv atual vira second_conv e assim por diante)), saida: 227x227xnum_classes
+		#input: 55x55x64, output: 227x227xnum_classes
 		self.deconv4 = nn.ConvTranspose2d(192, num_classes, kernel_size=11, stride=4)
 		#Checar se precisar de uma convolucao que nao altera h, w e d na camada de saida
 

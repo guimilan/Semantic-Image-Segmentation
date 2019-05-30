@@ -40,11 +40,11 @@ Implementation will be done on PyTorch using CUDA.
 
 ## 3. Progress report
 
-Work started with the survey of existing semantic segmentation models. The FCN-based architectures were deemed the most reasonable for the proposed deadline, both due to the relative ease of comprehension and implementation, as well to the computational power required in comparison with more recent models. 
+Work started with a survey of existing semantic segmentation models. The FCN-based architectures were deemed the most reasonable for the proposed deadline, both due to the relative ease of comprehension and implementation, as well to the computational power required in comparison with more recent models. 
 
 FCN-based models have been developed on top of several different architectures, notably AlexNet and VGG. For this work, the chosen approach was to take a pretrained Alexnet, and gradually add the layers that turn it into a FCN.
 
-Up to this point, a pretrained Alexnet has been successfully loaded, its layers frozen and fine tuned for classification on a smaller dataset with an accuracy rating of 85%, which is about the reported accuracy value for the Alexnet. Most recently, the classification layers were removed to make way to the first deconvolution layers. Some of the legacy code in which the classification dataset was loaded is still present.
+Up to this point, a pretrained Alexnet has been successfully loaded, its layers frozen and fine tuned for classification on a smaller dataset with an accuracy rating of 85%, which is about the reported accuracy value for the Alexnet. Most recently, the classification layers were removed to make way to the first deconvolution layers. Some of the legacy code in which the classification dataset was loaded is still present and undergoing modification. The most recent iteration can be found on the file "cnn.py".
 
 COCO provides its segmentation masks in a compressed, encoded format. Performing decoding and coupling each mask with its corresponding image during training would result in additional computational effort to an already intensive task. Thus, our efforts are now focused on generating a new dataset, composed of fully segmented images ready to use as ground truth.
 
