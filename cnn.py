@@ -103,33 +103,32 @@ class CNN(nn.Module):
 		return out_deconv4
 
 def fit(model, train_dataset, device):
-	criterion = nn.CrossEntropyLoss()#Funcao de erro: entropia cruzada
+	criterion = nn.CrossEntropyLoss()#Error function: cross entropy
 	optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-	#Gradiente descendente estocastico
-	#Taxa de aprendizado inicial: 0.001
-	#Aceleracao: 0.9
+	#Stochastic gradient descent
+	#Initial learning rate: 0.001
+	#momentum: 0.9
 
 	for epoch in range(2):
 		running_loss = 0.0
-		model.train()#Coloca flag de treinamento para direcionar o comportamento correto
-		#das camadas de dropout e batch normalization
+		model.train()#Sets a flag indicating the code that follows performs training 
+		#this makes sure the dropout and batch normalization layers perform as expected
+		
 
 		for index, data in enumerate(train_dataset, 0):
-			#data contem um batch de batch_size samples do dataset e suas classes
+			#the variable data contains an entire batch of inputs and their associated labels 
 			samples, labels = data
-			samples, labels = samples.to(device), labels.to(device)
-			#samples = samples.to(self.device)
-			#labels = labels.to(self.device)
+			samples, labels = samples.to(device), labels.to(device)#Sends the data to the GPU
 
-			optimizer.zero_grad()#Zera o gradiente (se nao fizer isso, ele acumula e aplica o acumulado
-			#na hora de atualizar os pesos)
-			output = model(samples)#Pega a saida da rede (faz forward pass. nao se chama o 
-			#forward pass diretamente em pytorch)
-			loss = criterion(output, labels)#Calcula o erro
-			loss.backward()#Faz backpropagation e calcula o quanto cada parametro deve ser otimizado
-			optimizer.step()#Atualiza cada parametro com os valores calculados no backpropagation
+			optimizer.zero_grad()#Zeroes the gradient, otherwise it will accumulate at every iteration
+			#the result would be that the network would start taking huge parameter jumps as training went on 
 
-			running_loss += loss.item()#?
+			output = model(samples)#Forward passes the input data
+			loss = criterion(output, labels)#Computes the error
+			loss.backward()#Computes the gradient, yielding how much each parameter must be updated
+			optimizer.step()#Updates each parameter according to the gradient
+
+			running_loss += loss.item()
 			if index % 100 == 99:
 				print('[%d %5d] loss %.3f' % (epoch+1, index+1, running_loss/2000))
 				running_loss = 0.0
@@ -139,38 +138,54 @@ def fit(model, train_dataset, device):
 def validate(model, test_dataset, device):
 	correct = 0
 	total = 0
-	model.eval()#Coloca a flag de validacao para direcionar o comportamento correto
-	#das camadas de dropout e batch normalization
+	model.eval()#Sets the flag for evaluation
+	#ensures batch normalization and dropout layers will stay inactive
 	with torch.no_grad():
 		for data in test_dataset:
+			#loads a batch of data, sends it to GPU
 			samples, labels = data
 			samples, labels = samples.to(device), labels.to(device)
+			
+			#Forward passes the data
 			outputs = model.forward(samples)
+			
+			#Takes the highest value from the output vector, computes the accuracy
 			_, predicted = torch.max(outputs.data, 1)
 			total += labels.size(0)
 			correct += (predicted == labels).sum().item()
 	print('Accuracy of the network: %d %%' % (100 * correct/total))
 	return correct, total
 
+#Main code for training (still using legacy code for alexnet finetuning and classification)
+#Presently under modification
 def main():
+	#sets up cuda
 	print("Cuda availability status:", torch.cuda.is_available())
 	print('setting device...')
 	torch.cuda.set_device(0)
 	print('device set')
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+	#loads cifar10 data
 	print("loading dataset")
 	train, test, classes = load_cifar10(16)
 
+	#instantiates pretrained alexnet
 	print("dataset loaded. instantiating alexnet...")
 	alexnet = models.alexnet(pretrained=True)
 	print('alexnet instantiated. instantiating model...')
 	cnn = CNN(len(classes), alexnet)
+
+	#Sends the network to the GPU
 	print('done. sending model to gpu')
 	cnn.cuda()
 	print('sending successful. training...')
+	
+	#Performs training
 	print('training')
 	fit(cnn, train, device)
+	
+	#Performs validation
 	print('validating')
 	validate(cnn, test, device)
 
