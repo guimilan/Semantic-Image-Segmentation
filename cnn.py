@@ -14,6 +14,7 @@ import glob
 from PIL import Image
 import os
 import imageio
+import json
 
 #plots an image
 def imshow(img):
@@ -45,7 +46,7 @@ class CNN(nn.Module):
 	#Alexnet-based FCN implementation
 	#for the sake of simplicity, at first the input will have an assumed dimension
 	#of 227x227x3
-	def __init__(self, num_classes=1000, alexnet=None):
+	def __init__(self, num_classes=90, alexnet=None):
 		super(CNN, self).__init__()
 
 		#Convolution layers for feature extraction
@@ -80,14 +81,14 @@ class CNN(nn.Module):
 		self.score_conv = nn.Conv2d(256, num_classes, 1)
 
 		#Deconvolution layers for restoring the original image
-		#input: 6x6x256, output: 13x13x256
-		self.deconv1 = nn.ConvTranspose2d(256, 256, kernel_size=3, stride=2)
+		#input: 6x6x90, output: 13x13x256
+		self.deconv1 = nn.ConvTranspose2d(90, 256, kernel_size=4, stride=2)
 		
 		#input: 13x13x256 (skip-connect to conv5's output), output: 27x27x64
-		self.deconv2 = nn.ConvTranspose2d(384, 64, kernel_size=3, stride=2)
+		self.deconv2 = nn.ConvTranspose2d(256, 64, kernel_size=4, stride=2)
 		
 		#input: 27x27x64 (skip-connect to conv1's output), output: 55x55x64
-		self.deconv3 = nn.ConvTranspose2d(192, 64, kernel_size=3, stride=2)
+		self.deconv3 = nn.ConvTranspose2d(64, 192, kernel_size=3, stride=2)
 		
 		#input: 55x55x64, output: 227x227xnum_classes
 		self.deconv4 = nn.ConvTranspose2d(192, num_classes, kernel_size=11, stride=4)
@@ -96,16 +97,29 @@ class CNN(nn.Module):
 		#Forward passes the data
 		#Skip connections are formed by summing together the two connected layers' output 
 		out_conv1 = self.conv1(x)
+		print('passed conv1')
 		out_conv2 = self.conv2(out_conv1)
+		print('passed conv2')
 		out_conv3 = self.conv3(out_conv2)
+		print('passed conv3')
 		out_conv4 = self.conv4(out_conv3)
+		print('passed conv4')
 		out_conv5 = self.conv5(out_conv4)
+		print('passed conv5')
 		out_conv6 = self.conv6(out_conv5)
+		print('passed conv6')
 		out_score_conv = self.score_conv(out_conv6)
+		print('passed score conv')
 		out_deconv1 = self.deconv1(out_score_conv)
+		print('passed deconv1')
+		print('out score conv shape', out_score_conv.size())
+		print('out deconv 1 shape', out_deconv1.size(), 'out conv 5 shape', out_conv5.size())
 		out_deconv2 = self.deconv2(out_deconv1+out_conv5)
+		print('passed deconv2')
 		out_deconv3 = self.deconv3(out_deconv2+out_conv1)
+		print('passed deconv3')
 		out_deconv4 = self.deconv4(out_deconv3)
+		print('passed deconv4')
 		return out_deconv4
 
 def fit(model, train_dataset, device):
@@ -164,24 +178,55 @@ def validate(model, test_dataset, device):
 
 #Class representing the dataset
 class CocoDataset(Dataset):
-	def __init__(self, image_dir, gt_dir, qtt, transform):
+	def __init__(self, image_dir, gt_dir, transform):
 		self.image_dir = image_dir
 		self.gt_dir = gt_dir
 		self.transform = transform
-		self.file_names = [os.path.basename(f) for f in glob.glob(image_dir+"\\*.jpg")]
-
-		self.images = torch.IntTensor(qtt, 3, 480, 640).zero_()
-		self.gts = torch.IntTensor(qtt, 1, 480, 640).zero_()
-
-		for i in range(self.images.shape[0]):
-			self.images[i] = self.transform(np.array(Image.open(self.image_dir+"\\"+self.file_names[i])))
-			self.gts[i] = self.transform(np.array(Image.open(self.gt_dir+"\\"+self.file_names[i])))
+		print('finding file names')
+		self.file_names = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(image_dir+"\\*.jpg")]
+		print('file names found')
 
 	def __getitem__(self, i):
-		return self.images[i], self.gts[i]
+		image = Image.open(self.image_dir+"\\"+self.file_names[i]+".jpg")
+		image = self.transform(image)
+		image = self.pad_image(image, 700, 700)
+
+		gt = self.load_ground_truth(self.file_names[i]+".jpg")
+		gt = self.transform(np.transpose(gt, (0,1,2)))
+		gt = self.pad_image(gt, 700, 700)
+
+
+		return image, gt[1:,:,:]
 
 	def __len__(self):
-		return self.images.size()
+		return len(self.file_names)
+
+	def load_ground_truth(self, name):
+		out_dir_cat='coco/ground_truth/'
+		with open(out_dir_cat+name+'.json') as file:
+			j = json.load(file)
+			seg_imageNch=np.zeros(j['shape']).astype(np.uint8)
+			#print(seg_imageNch.shape)
+			#print(j['shape'])
+			keys=list(j.keys())
+			#print(keys)
+			for i in keys[1:]:
+				seg_imageNch[:,:,int(i)]=j[i]
+			file.close()
+		return seg_imageNch
+
+	def pad_image(self, source, desired_height, desired_width):
+		padded_image = (-1)*torch.ones(source.shape[0], desired_height, desired_width)
+		padded_image[:, :source.size()[1], :source.size()[2]] = source
+
+		return padded_image		
+
+	def collate(self, batch):
+		print('collating')
+		data = [item[0] for item in batch]
+		target = [item[1] for item in batch]
+		print('collating successful')
+		return data, target
 
 def plot_tensor(tensor):
 	plt.imshow(transforms.ToPILImage()(tensor), interpolation="bicubic")
@@ -196,26 +241,38 @@ def main():
 	print('device set')
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+	print('loading alexnet')
+	alexnet = models.alexnet(pretrained=True)
+	print('alexnet loaded')
+
+	print('loading cnn')
+	cnn = CNN(90, alexnet)
+	print('cnn loaded')
+
 	transform = transforms.Compose([
-		transforms.Resize((480, 640)),
 		transforms.ToTensor(),
 	])
-	coco = CocoDataset("coco\\images", "coco\\ground_truth", 24, transform)
-	image, gt = coco[1]
-	vec = gt.numpy()
-	print('unique values from converting from tensor', np.unique(vec))
-	
-	print('loading with numpy')
-	sample = imageio.imread("coco\\ground_truth\\"+coco.file_names[0])
-	plt.imshow(sample)
-	plt.show()
-	print('unique values from loading with numpy', np.unique(sample))
-	
-	print('loading with pillow')
-	sample = np.array(Image.open("coco\\ground_truth\\"+coco.file_names[0]))
-	plt.imshow(sample)
-	plt.show()
-	print('unique values from loading with pillow', np.unique(sample))
+
+	print('creating dataset')
+	coco = CocoDataset("coco\\images", "coco\\ground_truth", transform)
+	print('dataset created')
+
+	print('creating loader')
+	train_loader = torch.utils.data.DataLoader(coco, batch_size=10, shuffle=False, num_workers=4)
+	print('loader created')
+
+	print('loading batch')
+	for data in train_loader:
+		sample, label = data
+		print('batch loaded. sample shape', sample.size())
+		print('network')
+		print(alexnet)
+		print('forward passing')
+		out = cnn(sample)
+		print('forward passed. result')
+		print(output.size())
+		break
+
 	'''
 	#loads cifar10 data
 	print("loading dataset")
