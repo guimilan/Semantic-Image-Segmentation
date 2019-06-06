@@ -83,44 +83,55 @@ class CNN(nn.Module):
 
 		#Deconvolution layers for restoring the original image
 		#input: 6x6x90, output: 13x13x256
-		self.deconv1 = nn.ConvTranspose2d(90, 256, kernel_size=4, stride=2)
+		self.deconv1 = nn.ConvTranspose2d(num_classes, 256, kernel_size=3, stride=2)
 		
 		#input: 13x13x256 (skip-connect to conv5's output), output: 27x27x64
-		self.deconv2 = nn.ConvTranspose2d(256, 64, kernel_size=4, stride=2)
+		self.deconv2 = nn.ConvTranspose2d(256, 64, kernel_size=3, stride=2)
 		
 		#input: 27x27x64 (skip-connect to conv1's output), output: 55x55x64
-		self.deconv3 = nn.ConvTranspose2d(64, 192, kernel_size=3, stride=2)
+		self.deconv3 = nn.ConvTranspose2d(64, 192, kernel_size=2, stride=2)
 		
 		#input: 55x55x64, output: 227x227xnum_classes
-		self.deconv4 = nn.ConvTranspose2d(192, num_classes, kernel_size=12, stride=4)
+		self.deconv4 = nn.ConvTranspose2d(192, num_classes, kernel_size=11, stride=4)
 
 	def forward(self, x):
 		#Forward passes the data
 		#Skip connections are formed by summing together the two connected layers' output 
 		out_conv1 = self.conv1(x)
-		print('passed conv1')
+		print('conv 1 output shape', out_conv1.size())
+
 		out_conv2 = self.conv2(out_conv1)
-		print('passed conv2')
+		print('conv 2 output shape', out_conv2.size())
+		
 		out_conv3 = self.conv3(out_conv2)
-		print('passed conv3')
+		print('conv 3 output shape', out_conv3.size())
+		
 		out_conv4 = self.conv4(out_conv3)
-		print('passed conv4')
+		print('conv 4 output shape', out_conv4.size())
+		
 		out_conv5 = self.conv5(out_conv4)
-		print('passed conv5')
+		print('conv 5 output shape', out_conv5.size())
+
 		out_conv6 = self.conv6(out_conv5)
-		print('passed conv6')
+		print('conv 6 output shape', out_conv6.size())
+
 		out_score_conv = self.score_conv(out_conv6)
-		print('passed score conv')
+		print('score conv output shape', out_score_conv.size())
+
+		#print('passed score conv')
 		out_deconv1 = self.deconv1(out_score_conv)
-		print('passed deconv1')
-		print('out score conv shape', out_score_conv.size())
-		print('out deconv 1 shape', out_deconv1.size(), 'out conv 5 shape', out_conv5.size())
+		print('deconv1 output shape', out_deconv1.size())
+
+
+		#print('passed deconv1')
+		#print('out score conv shape', out_score_conv.size())
+		#print('out deconv 1 shape', out_deconv1.size(), 'out conv 5 shape', out_conv5.size())
 		out_deconv2 = self.deconv2(out_deconv1+out_conv5)
-		print('passed deconv2')
+		#print('passed deconv2')
 		out_deconv3 = self.deconv3(out_deconv2+out_conv1)
-		print('passed deconv3')
+		#print('passed deconv3')
 		out_deconv4 = self.deconv4(out_deconv3)
-		print('passed deconv4')
+		#print('passed deconv4')
 		return out_deconv4
 
 def fit(model, train_dataset, device):
@@ -189,14 +200,17 @@ class CocoDataset(Dataset):
         self.transform = transform
 
     def __getitem__(self, i):
-    	print('')
+        #print('loading image')
         image = Image.open(self.image_dir + "\\" + self.imgs[i]['file_name'])
         image = self.transform(image)
-        image = self.pad_image(image, 700, 700)
+        image = self.pad_image(image, 800, 800)
+        #print('image loaded')
 
+        #print('loading ground truth')
         gt = self.load_ground_truth(i)
         gt = self.transform(np.transpose(gt, (0, 1, 2)))
-        gt = self.pad_image(gt, 700, 700)
+        gt = self.pad_image(gt, 800, 800)
+        #print('ground truth loaded')
 
         return image, gt[1:, :, :]
 
@@ -255,17 +269,19 @@ def main():
 	#sets up cuda
 	print("Cuda availability status:", torch.cuda.is_available())
 	print('setting device...')
-	torch.cuda.set_device(0)
-	print('device set')
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+	print('device set')
 
 	print('loading alexnet')
 	alexnet = models.alexnet(pretrained=True)
 	print('alexnet loaded')
 
 	print('loading cnn')
-	cnn = CNN(5, alexnet)
+	cnn = CNN(num_classes=5, alexnet=alexnet)
 	print('cnn loaded')
+	print('sending cnn to gpu')
+	cnn = cnn.to(device)
+	print('gpu transfer successful')
 
 	transform = transforms.Compose([
 		transforms.ToTensor(),
@@ -281,16 +297,18 @@ def main():
 	print('loader created')
 
 	print('loading batch')
-	for data in train_loader:
+	for index, data in enumerate(train_loader):
+		print('batch num', index)
 		sample, label = data
-		print('batch loaded. sample shape', sample.size())
-		print('network')
-		print(alexnet)
+		print('sending batch to gpu')
+		sample = sample.to(device)
+		label = label.to(device)
+		print('batch sent to gpu')
 		print('forward passing')
 		out = cnn(sample)
-		print('forward passed. result')
-		print(out.size())
-		break
+		print('forward passed. result shape', out.size())
+		if(index == 3):
+			break
 
 	'''
 	#loads cifar10 data
