@@ -15,6 +15,7 @@ from PIL import Image
 import os
 import imageio
 import json
+from pycocotools.coco import COCO
 
 #plots an image
 def imshow(img):
@@ -178,55 +179,72 @@ def validate(model, test_dataset, device):
 
 #Class representing the dataset
 class CocoDataset(Dataset):
-	def __init__(self, image_dir, gt_dir, transform):
-		self.image_dir = image_dir
-		self.gt_dir = gt_dir
-		self.transform = transform
-		print('finding file names')
-		self.file_names = [os.path.splitext(os.path.basename(f))[0] for f in glob.glob(image_dir+"\\*.jpg")]
-		print('file names found')
+    def __init__(self, image_dir, coco, transform):
+        self.image_dir = image_dir
+        self.coco = coco
+        self.allImgIds = None
+        self.classes = None
+        self.selectClass()
+        self.imgs = coco.loadImgs(self.allImgIds)
+        self.transform = transform
 
-	def __getitem__(self, i):
-		image = Image.open(self.image_dir+"\\"+self.file_names[i]+".jpg")
-		image = self.transform(image)
-		image = self.pad_image(image, 700, 700)
+    def __getitem__(self, i):
+    	print('')
+        image = Image.open(self.image_dir + "\\" + self.imgs[i]['file_name'])
+        image = self.transform(image)
+        image = self.pad_image(image, 700, 700)
 
-		gt = self.load_ground_truth(self.file_names[i]+".jpg")
-		gt = self.transform(np.transpose(gt, (0,1,2)))
-		gt = self.pad_image(gt, 700, 700)
+        gt = self.load_ground_truth(i)
+        gt = self.transform(np.transpose(gt, (0, 1, 2)))
+        gt = self.pad_image(gt, 700, 700)
 
+        return image, gt[1:, :, :]
 
-		return image, gt[1:,:,:]
+    def __len__(self):
+        return len(self.imgs)
 
-	def __len__(self):
-		return len(self.file_names)
+    def load_ground_truth(self, i):
+        annIds = self.coco.getAnnIds(imgIds=self.imgs[i]['id'], iscrowd=None)
+        anns = self.coco.loadAnns(annIds)
+        seg_imageNch = np.zeros((self.imgs[i]['height'], self.imgs[i]['width'], len(self.classes)+1)).astype(np.uint8)
+        seg_imageGray = np.zeros((self.imgs[i]['height'], self.imgs[i]['width'])).astype(np.uint8)
+        for i in range(len(anns)):
+            if anns[i]['category_id'] in self.classes.keys():
+                seg_image = self.coco.annToMask(anns[i])
+                seg_imageNch[:, :, self.classes[anns[i]['category_id']]] = seg_imageNch[:, :, self.classes[anns[i]['category_id']]] | seg_image
+                seg_image = (seg_image - (seg_image & seg_imageGray))
+                seg_imageGray = (seg_imageGray + ((seg_imageGray | seg_image) == 1) * self.classes[anns[i]['category_id']])
+        seg_imageNch[:, :, 0] = seg_imageGray.astype(np.uint8)
+        return seg_imageNch
 
-	def load_ground_truth(self, name):
-		out_dir_cat='coco/ground_truth/'
-		with open(out_dir_cat+name+'.json') as file:
-			j = json.load(file)
-			seg_imageNch=np.zeros(j['shape']).astype(np.uint8)
-			#print(seg_imageNch.shape)
-			#print(j['shape'])
-			keys=list(j.keys())
-			#print(keys)
-			for i in keys[1:]:
-				seg_imageNch[:,:,int(i)]=j[i]
-			file.close()
-		return seg_imageNch
+    def pad_image(self, source, desired_height, desired_width):
+        padded_image = (-1) * torch.ones(source.shape[0], desired_height, desired_width)
+        padded_image[:, :source.size()[1], :source.size()[2]] = source
 
-	def pad_image(self, source, desired_height, desired_width):
-		padded_image = (-1)*torch.ones(source.shape[0], desired_height, desired_width)
-		padded_image[:, :source.size()[1], :source.size()[2]] = source
+        return padded_image
 
-		return padded_image		
-
-	def collate(self, batch):
-		print('collating')
-		data = [item[0] for item in batch]
-		target = [item[1] for item in batch]
-		print('collating successful')
-		return data, target
+    def collate(self, batch):
+        print('collating')
+        data = [item[0] for item in batch]
+        target = [item[1] for item in batch]
+        print('collating successful')
+        return data, target
+    
+    def selectClass(self,start=0,end=5):
+        Cats={}
+        for i in range(len(self.coco.catToImgs)):
+            Cats[i]=len(self.coco.catToImgs[i])
+        Cats=list(sorted(Cats.items(),key = lambda kv:(kv[1],kv[0]),reverse=True))
+        allImgIds=[]
+        catIndex=1
+        catToClass={}
+        for f in Cats[start:end]:
+            catToClass[f[0]]=catIndex
+            allImgIds = list(set(allImgIds) | set(self.coco.catToImgs[f[0]]))
+            catIndex=catIndex+1
+        self.allImgIds=allImgIds
+        self.classes=catToClass
+        return self.allImgIds, self.classes
 
 def plot_tensor(tensor):
 	plt.imshow(transforms.ToPILImage()(tensor), interpolation="bicubic")
@@ -246,19 +264,20 @@ def main():
 	print('alexnet loaded')
 
 	print('loading cnn')
-	cnn = CNN(90, alexnet)
+	cnn = CNN(5, alexnet)
 	print('cnn loaded')
 
 	transform = transforms.Compose([
 		transforms.ToTensor(),
 	])
 
+	coco_api = COCO("coco\\ground_truth\\instances_train2014.json")
 	print('creating dataset')
-	coco = CocoDataset("coco\\images", "coco\\ground_truth", transform)
+	coco_dataset = CocoDataset("coco\\images", coco_api, transform)
 	print('dataset created')
 
 	print('creating loader')
-	train_loader = torch.utils.data.DataLoader(coco, batch_size=10, shuffle=False, num_workers=4)
+	train_loader = torch.utils.data.DataLoader(coco_dataset, batch_size=10, shuffle=False, num_workers=1)
 	print('loader created')
 
 	print('loading batch')
