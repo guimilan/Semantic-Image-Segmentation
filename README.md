@@ -11,7 +11,7 @@ The aim of this project is to investigate the implementation and the application
 ## 1. Image sets
 
 For the purpose of training the network, the MS Coco dataset will be used [1]. It contains a wide range of
-pictures displaying common objects, such as the sample below, as well as the ground truth containing each image's  segmentation masks.
+pictures displaying common objects, such as the sample below, as well as the ground truth containing each image's  segmentation masks. 
 
 <img src="http://images.cocodataset.org/train2014/COCO_train2014_000000002758.jpg" alt="MS COCO sample" width="200" height="200"><img src="https://content.screencast.com/users/romeubertho/folders/Snagit/media/1cefcc80-503a-4207-8df4-1927a2f801ab/05.29.2019-23.12.png" alt="MS COCO segmentation sample" width="200" height="200">
 
@@ -47,7 +47,13 @@ FCN-based models have been developed on top of several different architectures, 
 
 Up to this point, a pretrained Alexnet has been successfully loaded, its layers frozen and fine tuned for classification on a smaller dataset with an accuracy rating of 85%, which is about the reported accuracy value for the Alexnet. Most recently, the classification layers were removed to make way to the first deconvolution layers. Some of the legacy code in which the classification dataset was loaded is still present and undergoing modification. The most recent iteration can be found on the file "cnn.py".
 
-COCO provides its segmentation masks in a compressed, encoded format. Performing decoding and coupling each mask with its corresponding image during training would result in additional computational effort to an already intensive task. Thus, our efforts are now focused on generating a new dataset, composed of fully segmented images ready to use as ground truth.
+COCO provides its segmentation masks in a compressed, encoded format. Performing decoding and coupling each mask with its corresponding image during training would result in additional computational effort to an already intensive task. Therefore, several preprocessing strategies were attempted. Initially, focus was set on trying to maintain the maximum amount of information from the original dataset as possible while trying to minimize the computational effort required to load the minibatches during training. 
+
+The first attempt involved generating one-channel images, in which each pixel had the value corresponding to its class id as annotated in the ground truth. During training, each minibatch would expand the images into 90-channel images, 90 being the total number of classes provided by Coco. After expansion, each pixel on each channel would contain a binary value, with 1 meaning the pixel on location (x,y) and channel k belongs to class k, and a 0 meaning it doesn't. Only a single channel would contain a value of 1 for a pixel, while all the others would show 0. 
+
+The second approach consisted of generating plain text files for each image, which would contain a matrix for every object category featured in the respective image. Those matrixes would represent the channels of the 90-channel image used during training, in which a value of 1 at pixel (x,y) and matrix k would mean that that pixel belongs to class k. Matrixes which had only null values were not stored and their absence would imply a null matrix. Metadata contained in the files would inform which class each matrix belongs to.
+
+Through experimentation, those approaches were deemed too time-consuming to perform during training, so it was decided that our scope had to be narrowed so as to make training viable on the available hardware. Therefore, experiments will now be performed with a small subset of the classes featured on MS Coco. 
 
 Planned next steps include writing the code for training on MS Coco, which should complete the basic data pipeline that would allow proper experimentation to begin. This will be followed by tweaks to the architecture and fine tuning to specific tasks, such as medical image and street image segmentation. Finally, training on VGG-based FCNs (FCN-32, FCN-16 and FCN-8) will be tested, provided there's enough time left.
 

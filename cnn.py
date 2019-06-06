@@ -91,7 +91,7 @@ class CNN(nn.Module):
 		self.deconv3 = nn.ConvTranspose2d(64, 192, kernel_size=3, stride=2)
 		
 		#input: 55x55x64, output: 227x227xnum_classes
-		self.deconv4 = nn.ConvTranspose2d(192, num_classes, kernel_size=11, stride=4)
+		self.deconv4 = nn.ConvTranspose2d(192, num_classes, kernel_size=12, stride=4)
 
 	def forward(self, x):
 		#Forward passes the data
@@ -270,7 +270,7 @@ def main():
 		print('forward passing')
 		out = cnn(sample)
 		print('forward passed. result')
-		print(output.size())
+		print(out.size())
 		break
 
 	'''
