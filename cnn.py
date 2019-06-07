@@ -177,6 +177,10 @@ def fit(model, train_dataset, device):
 			print('computing loss')
 			print('output type', output.type())
 			print('labels type', labels.type())
+
+			print('output shape', output.size())
+			print('labels shape' ,labels.size())
+			
 			loss = criterion(output, labels)#Computes the error
 			loss.backward()#Computes the gradient, yielding how much each parameter must be updated
 			print('loss computed')
@@ -243,7 +247,7 @@ class CocoDataset(Dataset):
         gt = self.transform(np.transpose(gt, (0, 1, 2))).type(torch.LongTensor)
         gt = self.pad_image(gt, 800, 800)
 
-        return image, gt[1:, :, :]
+        return image, gt[0, :, :]
 
     def __len__(self):
         return len(self.imgs)
@@ -304,6 +308,7 @@ def main():
 	print('setting device...')
 	device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 	print('device set')
+	device = torch.device("cpu")
 
 	print('loading alexnet')
 	alexnet = models.alexnet(pretrained=True)
