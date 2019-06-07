@@ -6,6 +6,7 @@ from torch.utils.data import Dataset, DataLoader
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import torch.nn.modules.loss
 import matplotlib.pyplot as plt
 import numpy as np
 import utils
@@ -16,6 +17,7 @@ import os
 import imageio
 import json
 from pycocotools.coco import COCO
+from timeit import default_timer as timer
 
 #plots an image
 def imshow(img):
@@ -89,54 +91,55 @@ class CNN(nn.Module):
 		self.deconv2 = nn.ConvTranspose2d(256, 64, kernel_size=3, stride=2)
 		
 		#input: 27x27x64 (skip-connect to conv1's output), output: 55x55x64
-		self.deconv3 = nn.ConvTranspose2d(64, 192, kernel_size=2, stride=2)
+		self.deconv3 = nn.ConvTranspose2d(64, 192, kernel_size=3, stride=2)
 		
 		#input: 55x55x64, output: 227x227xnum_classes
-		self.deconv4 = nn.ConvTranspose2d(192, num_classes, kernel_size=11, stride=4)
+		self.deconv4 = nn.ConvTranspose2d(192, num_classes, kernel_size=8, stride=4)
 
 	def forward(self, x):
+		print('input shape', x.size())
 		#Forward passes the data
 		#Skip connections are formed by summing together the two connected layers' output 
 		out_conv1 = self.conv1(x)
-		print('conv 1 output shape', out_conv1.size())
+		#print('conv 1 output shape', out_conv1.size())
 
 		out_conv2 = self.conv2(out_conv1)
-		print('conv 2 output shape', out_conv2.size())
+		#print('conv 2 output shape', out_conv2.size())
 		
 		out_conv3 = self.conv3(out_conv2)
-		print('conv 3 output shape', out_conv3.size())
+		#print('conv 3 output shape', out_conv3.size())
 		
 		out_conv4 = self.conv4(out_conv3)
-		print('conv 4 output shape', out_conv4.size())
+		#print('conv 4 output shape', out_conv4.size())
 		
 		out_conv5 = self.conv5(out_conv4)
-		print('conv 5 output shape', out_conv5.size())
+		#print('conv 5 output shape', out_conv5.size())
 
 		out_conv6 = self.conv6(out_conv5)
-		print('conv 6 output shape', out_conv6.size())
+		#print('conv 6 output shape', out_conv6.size())
 
 		out_score_conv = self.score_conv(out_conv6)
-		print('score conv output shape', out_score_conv.size())
+		#print('score conv output shape', out_score_conv.size())
 
-		#print('passed score conv')
 		out_deconv1 = self.deconv1(out_score_conv)
-		print('deconv1 output shape', out_deconv1.size())
+		#print('deconv1 output shape', out_deconv1.size())
 
 
-		#print('passed deconv1')
-		#print('out score conv shape', out_score_conv.size())
-		#print('out deconv 1 shape', out_deconv1.size(), 'out conv 5 shape', out_conv5.size())
 		out_deconv2 = self.deconv2(out_deconv1+out_conv5)
-		#print('passed deconv2')
+		#print('deconv 2 output shape', out_deconv2.size())
+
 		out_deconv3 = self.deconv3(out_deconv2+out_conv1)
-		#print('passed deconv3')
+		#print('deconv 3 output shape', out_deconv3.size())
+		
 		out_deconv4 = self.deconv4(out_deconv3)
-		#print('passed deconv4')
+		#print('deconv 4 output shape', out_deconv4.size())
 		return out_deconv4
 
 def fit(model, train_dataset, device):
 	criterion = nn.CrossEntropyLoss()#Error function: cross entropy
+	print('instantiating optimizer')
 	optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+	print('optimizer instantiated')
 	#Stochastic gradient descent
 	#Initial learning rate: 0.001
 	#momentum: 0.9
@@ -148,22 +151,41 @@ def fit(model, train_dataset, device):
 		
 
 		for index, data in enumerate(train_dataset, 0):
+			print('new batch')
+			batch_start = timer()
 			#the variable data contains an entire batch of inputs and their associated labels 
+
 			samples, labels = data
 			samples, labels = samples.to(device), labels.to(device)#Sends the data to the GPU
 
+			print("zeroing grad")
 			optimizer.zero_grad()#Zeroes the gradient, otherwise it will accumulate at every iteration
 			#the result would be that the network would start taking huge parameter jumps as training went on 
+			print('grad zeroed')
 
+			print('inferring...')
+			infer_start = timer()
 			output = model(samples)#Forward passes the input data
+			infer_end = timer()
+			print('inferred')
+			print('time elapsed during inference:', infer_end-infer_start)
+			
+			print('computing loss')
 			loss = criterion(output, labels)#Computes the error
 			loss.backward()#Computes the gradient, yielding how much each parameter must be updated
+			print('loss computed')
+
+			print('updating weights')
 			optimizer.step()#Updates each parameter according to the gradient
+			print('weights updated')
 
 			running_loss += loss.item()
-			if index % 100 == 99:
+			print('running loss %.3f', running_loss)
+			if index % 10 == 9:
 				print('[%d %5d] loss %.3f' % (epoch+1, index+1, running_loss/2000))
 				running_loss = 0.0
+			batch_end = timer()
+			print('time elapsed for batch processing', batch_end-batch_start)
 
 	print('finished training')
 
@@ -202,9 +224,14 @@ class CocoDataset(Dataset):
     def __getitem__(self, i):
         #print('loading image')
         image = Image.open(self.image_dir + "\\" + self.imgs[i]['file_name'])
-        image = self.transform(image)
+        image = self.transform(image).type(torch.LongTensor)
+        if(image.size()[0] == 1):
+       	    #print('skipping single channel image')
+       	    i += 1
+            image = Image.open(self.image_dir + "\\" + self.imgs[i]['file_name'])
+            image = self.transform(image)
+
         image = self.pad_image(image, 800, 800)
-        #print('image loaded')
 
         #print('loading ground truth')
         gt = self.load_ground_truth(i)
@@ -237,6 +264,8 @@ class CocoDataset(Dataset):
 
         return padded_image
 
+    #Custom collating function. Used to combine individual tensors into a single batch
+    #This was made to replace pytorch's default collate during debugging 
     def collate(self, batch):
         print('collating')
         data = [item[0] for item in batch]
@@ -293,10 +322,13 @@ def main():
 	print('dataset created')
 
 	print('creating loader')
-	train_loader = torch.utils.data.DataLoader(coco_dataset, batch_size=10, shuffle=False, num_workers=1)
+	train_loader = torch.utils.data.DataLoader(coco_dataset, batch_size=8, shuffle=False, num_workers=1)
 	print('loader created')
 
-	print('loading batch')
+	print('training')
+	fit(cnn, train_loader, device)
+
+	'''print('loading batch')
 	for index, data in enumerate(train_loader):
 		print('batch num', index)
 		sample, label = data
@@ -307,8 +339,8 @@ def main():
 		print('forward passing')
 		out = cnn(sample)
 		print('forward passed. result shape', out.size())
-		if(index == 3):
-			break
+		if(index == 10):
+			break'''
 
 	'''
 	#loads cifar10 data
