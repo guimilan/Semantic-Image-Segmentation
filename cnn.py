@@ -249,7 +249,7 @@ class CocoDataset(Dataset):
         gt = self.transform(np.transpose(gt, (0, 1, 2))).type(torch.LongTensor)
         gt = self.pad_image(gt, 800, 800)
 
-        return image, gt[0, :, :]
+        return image, gt
 
     def __len__(self):
         return len(self.imgs)
