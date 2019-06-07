@@ -257,15 +257,15 @@ class CocoDataset(Dataset):
     def load_ground_truth(self, i):
         annIds = self.coco.getAnnIds(imgIds=self.imgs[i]['id'], iscrowd=None)
         anns = self.coco.loadAnns(annIds)
-        seg_imageNch = np.zeros((self.imgs[i]['height'], self.imgs[i]['width'], len(self.classes) + 1)).astype(np.uint8)
-        seg_imageGray = np.zeros((self.imgs[i]['height'], self.imgs[i]['width'])).astype(np.uint8)
+        seg_imageNch = np.zeros((self.imgs[i]['height'], self.imgs[i]['width'], len(self.classes))).astype(np.uint8)
+        # seg_imageGray = np.zeros((self.imgs[i]['height'], self.imgs[i]['width'])).astype(np.uint8)
         for i in range(len(anns)):
             if anns[i]['category_id'] in self.classes.keys():
                 seg_image = self.coco.annToMask(anns[i])
                 seg_imageNch[:, :, self.classes[anns[i]['category_id']]] = seg_imageNch[:, :, self.classes[anns[i]['category_id']]] | seg_image
-                seg_image = (seg_image - (seg_image & seg_imageGray))
-                seg_imageGray = (seg_imageGray + ((seg_imageGray | seg_image) == 1) * self.classes[anns[i]['category_id']])
-        seg_imageNch[:, :, 0] = seg_imageGray.astype(np.uint8)
+                # seg_image = (seg_image - (seg_image & seg_imageGray))
+                # seg_imageGray = (seg_imageGray + ((seg_imageGray | seg_image) == 1) * self.classes[anns[i]['category_id']])
+        # seg_imageNch[:, :, 0] = seg_imageGray.astype(np.uint8)
         return seg_imageNch
 
     def pad_image(self, source, desired_height, desired_width):
@@ -290,7 +290,7 @@ class CocoDataset(Dataset):
             Cats[i] = len(self.coco.catToImgs[i])
         Cats = list(sorted(Cats.items(), key=lambda kv: (kv[1], kv[0]), reverse=True))
         allImgIds = []
-        catIndex = 1
+        catIndex = 0
         catToClass = {}
         for f in Cats[start:end]:
             catToClass[f[0]] = catIndex
