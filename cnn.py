@@ -156,7 +156,11 @@ def fit(model, train_dataset, device):
 			#the variable data contains an entire batch of inputs and their associated labels 
 
 			samples, labels = data
+			print('just loaded data. samples data type', samples.type())
+			print('labels type', labels.type())
 			samples, labels = samples.to(device), labels.to(device)#Sends the data to the GPU
+			print('after sending to GPU. samples data type', samples.type())
+			print('labels type', labels.type())
 
 			print("zeroing grad")
 			optimizer.zero_grad()#Zeroes the gradient, otherwise it will accumulate at every iteration
@@ -171,6 +175,8 @@ def fit(model, train_dataset, device):
 			print('time elapsed during inference:', infer_end-infer_start)
 			
 			print('computing loss')
+			print('output type', output.type())
+			print('labels type', labels.type())
 			loss = criterion(output, labels)#Computes the error
 			loss.backward()#Computes the gradient, yielding how much each parameter must be updated
 			print('loss computed')
@@ -224,7 +230,7 @@ class CocoDataset(Dataset):
     def __getitem__(self, i):
         #print('loading image')
         image = Image.open(self.image_dir + "\\" + self.imgs[i]['file_name'])
-        image = self.transform(image).type(torch.LongTensor)
+        image = self.transform(image)
         if(image.size()[0] == 1):
        	    #print('skipping single channel image')
        	    i += 1
@@ -233,11 +239,9 @@ class CocoDataset(Dataset):
 
         image = self.pad_image(image, 800, 800)
 
-        #print('loading ground truth')
         gt = self.load_ground_truth(i)
-        gt = self.transform(np.transpose(gt, (0, 1, 2)))
+        gt = self.transform(np.transpose(gt, (0, 1, 2))).type(torch.LongTensor)
         gt = self.pad_image(gt, 800, 800)
-        #print('ground truth loaded')
 
         return image, gt[1:, :, :]
 
@@ -259,7 +263,7 @@ class CocoDataset(Dataset):
         return seg_imageNch
 
     def pad_image(self, source, desired_height, desired_width):
-        padded_image = (-1) * torch.ones(source.shape[0], desired_height, desired_width)
+        padded_image = (-1) * torch.ones(source.shape[0], desired_height, desired_width).type(source.type())
         padded_image[:, :source.size()[1], :source.size()[2]] = source
 
         return padded_image
