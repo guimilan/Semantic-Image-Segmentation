@@ -238,19 +238,39 @@ class CocoDataset(Dataset):
         self.transform = transform
 
     def __getitem__(self, i):
-        # print('loading image')
+        print('loading image')
+        imload_start = timer()
         image = Image.open(self.image_dir + "\\" + self.imgs[i]['file_name'])
         if image.mode == 'L':
-            print('converting gray scale to RGB')
+            #print('converting gray scale to RGB')
             image = image.convert('RGB')
         image = self.transform(image)
-
+        imload_end = timer()
         image = self.pad_image(image, 800, 800)
+        print('input image loaded. elapsed time:', imload_end-imload_start)
 
+        print('loading gt')
+        gtload_start = timer()
         gt = self.load_ground_truth(i)
+        gtload_end = timer()
+        print('gt loaded. elapsed time:', gtload_end-gtload_start)
+        
+        print('gt ops')
+        gtops_start = timer()
+        transpose_start = timer()
         gt = np.transpose(gt, (0, 1, 2))
+        transpose_end = timer()
+        print('transposed elapsed time', transpose_end-transpose_start)
+        cast_start = timer()
         gt = torch.tensor(gt, dtype=torch.long)
+        cast_end = timer()
+        print('cast time', cast_end-cast_start)
+        pad_start = timer()
         gt = self.pad_image(gt, 800, 800)
+        pad_end = timer()
+        print('pad time', pad_end-pad_start)
+        gtops_end = timer()
+        print('gtops. elapsed time:', gtops_end-gtops_start)
 
         return image, gt[0,:,:]
 
@@ -345,6 +365,7 @@ def main():
     print('training')
     fit(cnn, train_loader, device)
 
+    torch.save(cnn.state_dict(), 'cnn.pt')
     '''print('loading batch')
     for index, data in enumerate(train_loader):
         print('batch num', index)
