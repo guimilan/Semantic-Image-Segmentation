@@ -148,21 +148,24 @@ def fit(model, train_dataset, device):
     # momentum: 0.9
 
     for epoch in range(2):
+        print('epoch', epoch)
         running_loss = 0.0
         model.train()  # Sets a flag indicating the code that follows performs training
         # this makes sure the dropout and batch normalization layers perform as expected
-
-        for index, data in enumerate(train_dataset, 0):
-            print('new batch')
-            batch_start = timer()
+        print('loading new batch')
+        batch_start = timer()
+        for index, (samples, labels) in enumerate(train_dataset):
+            batch_end  = timer()
+            print('batch loaded. time elapsed: ', batch_end-batch_start)
+            
             # the variable data contains an entire batch of inputs and their associated labels
 
-            samples, labels = data
-            print('just loaded data. samples data type', samples.type())
-            print('labels type', labels.type())
+            #samples, labels = data
+            print('sending data to device')
+            device_start = timer()
             samples, labels = samples.to(device), labels.to(device)  # Sends the data to the GPU
-            print('after sending to GPU. samples data type', samples.type())
-            print('labels type', labels.type())
+            device_end = timer()
+            print('data sent. elapsed time', device_end-device_start)
 
             print("zeroing grad")
             optimizer.zero_grad()  # Zeroes the gradient, otherwise it will accumulate at every iteration
@@ -177,27 +180,26 @@ def fit(model, train_dataset, device):
             print('time elapsed during inference:', infer_end - infer_start)
 
             print('computing loss')
-            print('output type', output.type())
-            print('labels type', labels.type())
-
-            print('output shape', output.size())
-            print('labels shape', labels.size())
-
+            loss_start = timer()
             loss = criterion(output, labels)  # Computes the error
             loss.backward()  # Computes the gradient, yielding how much each parameter must be updated
-            print('loss computed')
+            loss_end = timer()
+            print('loss computed. time elapsed: ', loss_end-loss_start)
 
             print('updating weights')
+            weights_start = timer()
             optimizer.step()  # Updates each parameter according to the gradient
-            print('weights updated')
+            weights_end = timer()
+            print('weights updated. time elapsed: ', weights_end-weights_start)
 
-            running_loss += loss.item()
-            print('running loss %.3f', running_loss)
-            if index % 10 == 9:
+            running_loss = loss.item()
+            print('running loss', running_loss)
+            '''if index % 10 == 9:
                 print('[%d %5d] loss %.3f' % (epoch + 1, index + 1, running_loss / 2000))
-                running_loss = 0.0
-            batch_end = timer()
-            print('time elapsed for batch processing', batch_end - batch_start)
+                running_loss = 0.0'''
+            print('loading new batch')
+            batch_start = timer()
+            
 
     print('finished training')
 
@@ -246,10 +248,11 @@ class CocoDataset(Dataset):
         image = self.pad_image(image, 800, 800)
 
         gt = self.load_ground_truth(i)
-        gt = self.transform(np.transpose(gt, (0, 1, 2))).type(torch.LongTensor)
+        gt = np.transpose(gt, (0, 1, 2))
+        gt = torch.tensor(gt, dtype=torch.long)
         gt = self.pad_image(gt, 800, 800)
 
-        return image, gt
+        return image, gt[0,:,:]
 
     def __len__(self):
         return len(self.imgs)
@@ -269,14 +272,13 @@ class CocoDataset(Dataset):
         return seg_imageNch
 
     def pad_image(self, source, desired_height, desired_width):
-        padded_image = (-1) * torch.ones(source.shape[0], desired_height, desired_width).type(source.type())
+        padded_image = torch.zeros(source.shape[0], desired_height, desired_width).type(source.type())
         padded_image[:, :source.size()[1], :source.size()[2]] = source
 
         return padded_image
 
-        # Custom collating function. Used to combine individual tensors into a single batch
-        # This was made to replace pytorch's default collate during debugging
-
+    # Custom collating function. Used to combine individual tensors into a single batch
+    # This was made to replace pytorch's default collate during debugging
     def collate(self, batch):
         print('collating')
         data = [item[0] for item in batch]
@@ -314,7 +316,7 @@ def main():
     print('setting device...')
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('device set')
-    device = torch.device("cpu")
+    #device = torch.device("cpu")
 
     print('loading alexnet')
     alexnet = models.alexnet(pretrained=True)
@@ -337,7 +339,7 @@ def main():
     print('dataset created')
 
     print('creating loader')
-    train_loader = torch.utils.data.DataLoader(coco_dataset, batch_size=8, shuffle=False, num_workers=1)
+    train_loader = torch.utils.data.DataLoader(coco_dataset, batch_size=2, shuffle=False)
     print('loader created')
 
     print('training')
