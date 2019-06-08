@@ -147,9 +147,11 @@ def fit(model, train_dataset, device):
     # Initial learning rate: 0.001
     # momentum: 0.9
 
-    for epoch in range(2):
-        print('epoch', epoch)
+    epoch = 0
+    running_loss = 1.0
+    while epoch < 2 or running_loss < 10e-6:
         running_loss = 0.0
+        print('epoch', epoch)
         model.train()  # Sets a flag indicating the code that follows performs training
         # this makes sure the dropout and batch normalization layers perform as expected
         print('loading new batch')
@@ -327,6 +329,8 @@ def plot_tensor(tensor):
     plt.imshow(transforms.ToPILImage()(tensor), interpolation="bicubic")
     plt.show()
 
+def mask_to_color(net_output):
+	return None
 
 # Main code for training (still using legacy code for alexnet finetuning and classification)
 # Presently under modification
