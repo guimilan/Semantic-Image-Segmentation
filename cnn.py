@@ -60,7 +60,7 @@ def fit(model, train_dataset, device):
 
     epoch = 0
     running_loss = 1.0
-    while epoch < 2 or running_loss < 10e-6:
+    while epoch < 2 or running_loss < 10e-3:
         running_loss = 0.0
         print('epoch', epoch)
         model.train()  # Sets a flag indicating the code that follows performs training
