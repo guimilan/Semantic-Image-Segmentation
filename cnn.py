@@ -68,17 +68,17 @@ def fit(model, train_dataset, device):
         print('loading new batch')
         batch_start = timer()
         for index, (samples, labels) in enumerate(train_dataset):
-            batch_end  = timer()
-            print('batch loaded. time elapsed: ', batch_end-batch_start)
-            
+            batch_end = timer()
+            print('batch loaded. time elapsed: ', batch_end - batch_start)
+
             # the variable data contains an entire batch of inputs and their associated labels
 
-            #samples, labels = data
+            # samples, labels = data
             print('sending data to device')
             device_start = timer()
             samples, labels = samples.to(device), labels.to(device)  # Sends the data to the GPU
             device_end = timer()
-            print('data sent. elapsed time', device_end-device_start)
+            print('data sent. elapsed time', device_end - device_start)
 
             print("zeroing grad")
             optimizer.zero_grad()  # Zeroes the gradient, otherwise it will accumulate at every iteration
@@ -97,13 +97,13 @@ def fit(model, train_dataset, device):
             loss = criterion(output, labels)  # Computes the error
             loss.backward()  # Computes the gradient, yielding how much each parameter must be updated
             loss_end = timer()
-            print('loss computed. time elapsed: ', loss_end-loss_start)
+            print('loss computed. time elapsed: ', loss_end - loss_start)
 
             print('updating weights')
             weights_start = timer()
             optimizer.step()  # Updates each parameter according to the gradient
             weights_end = timer()
-            print('weights updated. time elapsed: ', weights_end-weights_start)
+            print('weights updated. time elapsed: ', weights_end - weights_start)
 
             running_loss = loss.item()
             print('running loss', running_loss)
@@ -112,7 +112,6 @@ def fit(model, train_dataset, device):
                 running_loss = 0.0'''
             print('loading new batch')
             batch_start = timer()
-            
 
     print('finished training')
 
@@ -153,43 +152,43 @@ class CocoDataset(Dataset):
     def __getitem__(self, i):
         print('loading image')
         imload_start = timer()
-        image = Image.open(self.image_dir + "\\" + self.imgs[i]['file_name'])
+        image = Image.open(self.image_dir + "/" + self.imgs[i]['file_name'])
         if image.mode == 'L':
-            #print('converting gray scale to RGB')
+            # print('converting gray scale to RGB')
             image = image.convert('RGB')
         image = self.transform(image)
         imload_end = timer()
         image = self.pad_image(image, 800, 800)
-        print('input image loaded. elapsed time:', imload_end-imload_start)
+        print('input image loaded. elapsed time:', imload_end - imload_start)
 
         print('loading gt')
         gtload_start = timer()
         gt = self.load_ground_truth(i, 800, 800)
         gtload_end = timer()
-        print('gt loaded. elapsed time:', gtload_end-gtload_start)
-        
+        print('gt loaded. elapsed time:', gtload_end - gtload_start)
+
         print('gt ops')
         gtops_start = timer()
-        
+
         '''transpose_start = timer()
         gt = np.transpose(gt, (0, 1, 2))
         transpose_end = timer()
         print('transposed elapsed time', transpose_end-transpose_start)'''
-        
+
         cast_start = timer()
         gt = torch.tensor(gt, dtype=torch.long)
         cast_end = timer()
-        print('cast time', cast_end-cast_start)
+        print('cast time', cast_end - cast_start)
 
-        #pad_start = timer()
-        #gt = self.pad_image(gt, 800, 800)
-        #pad_end = timer()
-        #print('pad time', pad_end-pad_start)
-        
+        # pad_start = timer()
+        # gt = self.pad_image(gt, 800, 800)
+        # pad_end = timer()
+        # print('pad time', pad_end-pad_start)
+
         gtops_end = timer()
-        print('gtops. elapsed time:', gtops_end-gtops_start)
+        print('gtops. elapsed time:', gtops_end - gtops_start)
 
-        return image, gt[0,:,:]
+        return image, gt[0, :, :]
 
     def __len__(self):
         return len(self.imgs)
@@ -202,8 +201,8 @@ class CocoDataset(Dataset):
         for i in range(len(anns)):
             if anns[i]['category_id'] in self.classes.keys():
                 seg_image = self.coco.annToMask(anns[i]).T
-                seg_imageNch[self.classes[anns[i]['category_id']],:seg_image.shape[0],:seg_image.shape[1]] = \
-                seg_imageNch[self.classes[anns[i]['category_id']],:seg_image.shape[0],:seg_image.shape[1]] | seg_image[:,:]
+                seg_imageNch[self.classes[anns[i]['category_id']], :seg_image.shape[0], :seg_image.shape[1]] = \
+                    seg_imageNch[self.classes[anns[i]['category_id']], :seg_image.shape[0], :seg_image.shape[1]] | seg_image[:, :]
                 # seg_image = (seg_image - (seg_image & seg_imageGray))
                 # seg_imageGray = (seg_imageGray + ((seg_imageGray | seg_image) == 1) * self.classes[anns[i]['category_id']])
         # seg_imageNch[:, :, 0] = seg_imageGray.astype(np.uint8)
@@ -245,8 +244,10 @@ def plot_tensor(tensor):
     plt.imshow(transforms.ToPILImage()(tensor), interpolation="bicubic")
     plt.show()
 
+
 def mask_to_color(net_output):
-	return None
+    return None
+
 
 # Main code for training (still using legacy code for alexnet finetuning and classification)
 # Presently under modification
@@ -256,7 +257,7 @@ def main():
     print('setting device...')
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('device set')
-    #device = torch.device("cpu")
+    # device = torch.device("cpu")
 
     print('loading alexnet')
     alexnet = models.alexnet(pretrained=True)
@@ -273,9 +274,9 @@ def main():
         transforms.ToTensor(),
     ])
 
-    coco_api = COCO("coco\\ground_truth\\instances_train2014.json")
+    coco_api = COCO("downloads/dataset/annotations/instances_train2014.json")
     print('creating dataset')
-    coco_dataset = CocoDataset("coco\\images", coco_api, transform)
+    coco_dataset = CocoDataset("downloads/dataset/train2014", coco_api, transform)
     print('dataset created')
 
     print('creating loader')

@@ -8,7 +8,8 @@ import torch.nn.functional as F
 import torch.optim as optim
 import torch.nn.modules.loss
 
-#custom_fcn_alexnet
+
+# custom_fcn_alexnet
 class CustomFCNAlexnet(nn.Module):
     # Alexnet-based FCN implementation
     # for the sake of simplicity, at first the input will have an assumed dimension
