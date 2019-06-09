@@ -279,7 +279,7 @@ def main():
     print('dataset created')
 
     print('creating loader')
-    train_loader = torch.utils.data.DataLoader(coco_dataset, batch_size=2, shuffle=False)
+    train_loader = torch.utils.data.DataLoader(coco_dataset, batch_size=16, shuffle=False)
     print('loader created')
 
     print('training')
