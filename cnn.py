@@ -18,6 +18,7 @@ import imageio
 import json
 from pycocotools.coco import COCO
 from timeit import default_timer as timer
+from custom_fcn_alexnet import CustomFCNAlexnet
 
 
 # plots an image
@@ -46,96 +47,6 @@ def load_cifar10(batch_size):
 
     classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
     return train_loader, test_loader, classes
-
-
-class CNN(nn.Module):
-    # Alexnet-based FCN implementation
-    # for the sake of simplicity, at first the input will have an assumed dimension
-    # of 227x227x3
-    def __init__(self, num_classes=90, alexnet=None):
-        super(CNN, self).__init__()
-
-        # Convolution layers for feature extraction
-        # Sizes: 227x227, 55x55, 27x27, 13x13 e 6x6
-        self.conv1 = nn.Sequential(
-            alexnet.features[0],  # conv2d(227x227x3, 55x55x64, kernel=11x11, stride=4, padding=2)
-            alexnet.features[1],  # relu
-            alexnet.features[2],  # maxpool2d(55x55x64, 27x27x64, kernel 3x3, stride=2, padding=0) pool 1
-        )
-        self.conv2 = nn.Sequential(
-            alexnet.features[3],  # conv2d(27x27x64, 27x27x192, kernel=5x5, stride=1, padding=1)
-            alexnet.features[4],  # relu
-            alexnet.features[5],  # maxpool2d(27x27x192, 13x13x192, kernel=3x3, stride=2, padding=0) pool 2
-        )
-        self.conv3 = nn.Sequential(
-            alexnet.features[6],  # conv2d(13x13x192, 13x13x384, kernel=3x3, stride=1, padding=1)
-            alexnet.features[7],  # relu
-        )
-        self.conv4 = nn.Sequential(
-            alexnet.features[8],  # conv2d(13x13x384, 13x13x256, kernel=3x3, stride=1, padding=1)
-            alexnet.features[9]  # relu
-        )
-        self.conv5 = nn.Sequential(
-            alexnet.features[10],  # conv2d(13x13x256, 13x13x256, kernel=3x3, stride=1, padding=1)
-            alexnet.features[11],  # relu
-        )
-        self.conv6 = alexnet.features[12]  # maxpool2d(13x13x256, 6x6x256, kernel=3x3, stride=2) pool 3
-        for param in self.parameters():
-            param.requires_grad = False
-
-        # size-1 convolution for pixel-by-pixel prediction
-        self.score_conv = nn.Conv2d(256, num_classes, 1)
-
-        # Deconvolution layers for restoring the original image
-        # input: 6x6x90, output: 13x13x256
-        self.deconv1 = nn.ConvTranspose2d(num_classes, 256, kernel_size=3, stride=2)
-
-        # input: 13x13x256 (skip-connect to conv5's output), output: 27x27x64
-        self.deconv2 = nn.ConvTranspose2d(256, 64, kernel_size=3, stride=2)
-
-        # input: 27x27x64 (skip-connect to conv1's output), output: 55x55x64
-        self.deconv3 = nn.ConvTranspose2d(64, 192, kernel_size=3, stride=2)
-
-        # input: 55x55x64, output: 227x227xnum_classes
-        self.deconv4 = nn.ConvTranspose2d(192, num_classes, kernel_size=8, stride=4)
-
-    def forward(self, x):
-        print('input shape', x.size())
-        # Forward passes the data
-        # Skip connections are formed by summing together the two connected layers' output
-        out_conv1 = self.conv1(x)
-        # print('conv 1 output shape', out_conv1.size())
-
-        out_conv2 = self.conv2(out_conv1)
-        # print('conv 2 output shape', out_conv2.size())
-
-        out_conv3 = self.conv3(out_conv2)
-        # print('conv 3 output shape', out_conv3.size())
-
-        out_conv4 = self.conv4(out_conv3)
-        # print('conv 4 output shape', out_conv4.size())
-
-        out_conv5 = self.conv5(out_conv4)
-        # print('conv 5 output shape', out_conv5.size())
-
-        out_conv6 = self.conv6(out_conv5)
-        # print('conv 6 output shape', out_conv6.size())
-
-        out_score_conv = self.score_conv(out_conv6)
-        # print('score conv output shape', out_score_conv.size())
-
-        out_deconv1 = self.deconv1(out_score_conv)
-        # print('deconv1 output shape', out_deconv1.size())
-
-        out_deconv2 = self.deconv2(out_deconv1 + out_conv5)
-        # print('deconv 2 output shape', out_deconv2.size())
-
-        out_deconv3 = self.deconv3(out_deconv2 + out_conv1)
-        # print('deconv 3 output shape', out_deconv3.size())
-
-        out_deconv4 = self.deconv4(out_deconv3)
-        # print('deconv 4 output shape', out_deconv4.size())
-        return out_deconv4
 
 
 def fit(model, train_dataset, device):
@@ -253,24 +164,28 @@ class CocoDataset(Dataset):
 
         print('loading gt')
         gtload_start = timer()
-        gt = self.load_ground_truth(i)
+        gt = self.load_ground_truth(i, 800, 800)
         gtload_end = timer()
         print('gt loaded. elapsed time:', gtload_end-gtload_start)
         
         print('gt ops')
         gtops_start = timer()
-        transpose_start = timer()
+        
+        '''transpose_start = timer()
         gt = np.transpose(gt, (0, 1, 2))
         transpose_end = timer()
-        print('transposed elapsed time', transpose_end-transpose_start)
+        print('transposed elapsed time', transpose_end-transpose_start)'''
+        
         cast_start = timer()
         gt = torch.tensor(gt, dtype=torch.long)
         cast_end = timer()
         print('cast time', cast_end-cast_start)
-        pad_start = timer()
-        gt = self.pad_image(gt, 800, 800)
-        pad_end = timer()
-        print('pad time', pad_end-pad_start)
+
+        #pad_start = timer()
+        #gt = self.pad_image(gt, 800, 800)
+        #pad_end = timer()
+        #print('pad time', pad_end-pad_start)
+        
         gtops_end = timer()
         print('gtops. elapsed time:', gtops_end-gtops_start)
 
@@ -279,15 +194,16 @@ class CocoDataset(Dataset):
     def __len__(self):
         return len(self.imgs)
 
-    def load_ground_truth(self, i):
+    def load_ground_truth(self, i, desired_height, desired_width):
         annIds = self.coco.getAnnIds(imgIds=self.imgs[i]['id'], iscrowd=None)
         anns = self.coco.loadAnns(annIds)
-        seg_imageNch = np.zeros((self.imgs[i]['height'], self.imgs[i]['width'], len(self.classes))).astype(np.uint8)
+        seg_imageNch = np.zeros((len(self.classes), desired_height, desired_width)).astype(np.uint8)
         # seg_imageGray = np.zeros((self.imgs[i]['height'], self.imgs[i]['width'])).astype(np.uint8)
         for i in range(len(anns)):
             if anns[i]['category_id'] in self.classes.keys():
-                seg_image = self.coco.annToMask(anns[i])
-                seg_imageNch[:, :, self.classes[anns[i]['category_id']]] = seg_imageNch[:, :, self.classes[anns[i]['category_id']]] | seg_image
+                seg_image = self.coco.annToMask(anns[i]).T
+                seg_imageNch[self.classes[anns[i]['category_id']],:seg_image.shape[0],:seg_image.shape[1]] = \
+                seg_imageNch[self.classes[anns[i]['category_id']],:seg_image.shape[0],:seg_image.shape[1]] | seg_image[:,:]
                 # seg_image = (seg_image - (seg_image & seg_imageGray))
                 # seg_imageGray = (seg_imageGray + ((seg_imageGray | seg_image) == 1) * self.classes[anns[i]['category_id']])
         # seg_imageNch[:, :, 0] = seg_imageGray.astype(np.uint8)
@@ -347,7 +263,7 @@ def main():
     print('alexnet loaded')
 
     print('loading cnn')
-    cnn = CNN(num_classes=5, alexnet=alexnet)
+    cnn = CustomFCNAlexnet(num_classes=5, alexnet=alexnet)
     print('cnn loaded')
     print('sending cnn to gpu')
     cnn = cnn.to(device)
@@ -370,46 +286,7 @@ def main():
     fit(cnn, train_loader, device)
 
     torch.save(cnn.state_dict(), 'cnn.pt')
-    '''print('loading batch')
-    for index, data in enumerate(train_loader):
-        print('batch num', index)
-        sample, label = data
-        print('sending batch to gpu')
-        sample = sample.to(device)
-        label = label.to(device)
-        print('batch sent to gpu')
-        print('forward passing')
-        out = cnn(sample)
-        print('forward passed. result shape', out.size())
-        if(index == 10):
-            break'''
 
-    '''
-    #loads cifar10 data
-    print("loading dataset")
-    train, test, classes = load_cifar10(16)
-
-    #instantiates pretrained alexnet
-    print("dataset loaded. instantiating alexnet...")
-    alexnet = models.alexnet(pretrained=True)
-    print('alexnet instantiated. instantiating model...')
-    cnn = CNN(10, alexnet)
-
-    #Sends the network to the GPU (if one if available. otherwise, retains it on the CPU)
-    print('done. sending model to gpu')
-    cnn.to(device)
-    print('successfully sent. begin training...')	
-    
-    #Performs training
-    print('training')
-    fit(cnn, train, device)
-    
-    #Performs validation
-    print('validating')
-    validate(cnn, test, device)
-
-    #validate(alexnet, test, device)
-    #print('validated')'''
     return 0
 
 
