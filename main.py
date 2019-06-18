@@ -62,6 +62,7 @@ def fit(model, train_dataset, device, epoch=0, image_index=0, optimizer=None):
     # momentum: 0.9
 
     running_loss = 1.0
+    images_since_last_save = 0
 
     while epoch < 2 or running_loss < 10e-3:
         running_loss = 0.0
@@ -70,7 +71,8 @@ def fit(model, train_dataset, device, epoch=0, image_index=0, optimizer=None):
         # this makes sure the dropout and batch normalization layers perform as expected
         print('loading new batch')
         batch_start = timer()
-        for index, (samples, labels) in enumerate(train_dataset[image_index:]):
+
+        for index, (samples, labels) in enumerate(train_dataset):
             batch_end  = timer()
             print('batch loaded. time elapsed: ', batch_end-batch_start)
             if(image_index % 20 == 0):
@@ -184,13 +186,14 @@ def validate(model, test_dataset, device):
     print('Accuracy of the network: %d %%' % (100 * correct / total))
     return correct, total
 
-#Auxiliary function to plot a Pytorch tensor
 def plot_tensor(tensor):
     plt.imshow(transforms.ToPILImage()(tensor), interpolation="bicubic")
     plt.show()
 
+
 def mask_to_color(net_output):
-	return None
+    return None
+
 
 #Main code for training the custom fcn-alexnet. Checks if there exists a checkpoint for a model in training
 #in the ./checkpoints folder. If positive, loads the latest checkpoint, sends it to the GPU
@@ -201,7 +204,7 @@ def main():
     print('setting device...')
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('device set')
-    #device = torch.device("cpu")
+    # device = torch.device("cpu")
 
     print('loading alexnet')
     alexnet = models.alexnet(pretrained=True)
@@ -220,7 +223,7 @@ def main():
 
     coco_api = COCO("coco\\ground_truth\\instances_train2014.json")
     print('creating dataset')
-    coco_dataset = CocoDataset("coco\\images", coco_api, transform)
+    coco_dataset = CocoDataset("coco\\images\\", coco_api, transform)
     print('dataset created')
 
     print('creating loader')

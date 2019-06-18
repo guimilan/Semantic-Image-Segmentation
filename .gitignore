@@ -11,3 +11,5 @@ train2014.zip
 BSR_bsds500.tar
 downloads/
 amazon/
+.idea/
+__pycache__/
