@@ -121,9 +121,9 @@ def fit(model, train_dataset, device, epoch=0, image_index=0, optimizer=None):
             image_index += samples.size()[0]
 
             images_since_last_save +=  samples.size()[0]
-            if(images_since_last_save > 500):
+            if(images_since_last_save > 40):
                 print('saving checkpoint at image', image_index)
-                save_model(model, epoch, image_qtt, optimizer, 'custom_fcn_'+epoch+'_'+str(image_index))
+                save_model(model, epoch, image_index, optimizer, 'custom_fcn_'+str(epoch)+'_'+str(image_index)+'.pickle')
                 images_since_last_save = 0
 
         image_index = 0
@@ -131,9 +131,10 @@ def fit(model, train_dataset, device, epoch=0, image_index=0, optimizer=None):
 
 #Saves the model as well as information related to training, so it can be resumed later
 def save_model(model, epoch, image_index, optimizer, filename):
+    filename = Path('checkpoints')/filename
     checkpoint = {'model': model, 'epoch': epoch, 'image_index': image_index, 'optimizer': optimizer}
-    with open('checkpoints\\'+filename, 'wb') as file:
-        pickle.dump(checkpoint)
+    with open(filename, 'wb+') as file:
+        pickle.dump(checkpoint, file)
 
 #Loads a model with the specified filename
 def load_model(filename):
