@@ -75,7 +75,7 @@ def fit(model, train_dataset, device, epoch=0, image_index=0, optimizer=None):
         for index, (samples, labels) in enumerate(train_dataset):
             batch_end  = timer()
             print('batch loaded. time elapsed: ', batch_end-batch_start)
-            if(image_index % 20 == 0):
+            if(image_index % 1000 == 0):
                 print('current image:', image_index)
             # the variable data contains an entire batch of inputs and their associated labels
 
@@ -121,9 +121,9 @@ def fit(model, train_dataset, device, epoch=0, image_index=0, optimizer=None):
             image_index += samples.size()[0]
 
             images_since_last_save +=  samples.size()[0]
-            if(images_since_last_save > 40):
+            if(images_since_last_save > 10000):
                 print('saving checkpoint at image', image_index)
-                save_model(model, epoch, image_index, optimizer, 'custom_fcn_'+str(epoch)+'_'+str(image_index)+'.pickle')
+                save_model(model, epoch, image_index, optimizer, 'customfcn_'+str(epoch)+'_'+str(image_index)+'.pickle')
                 images_since_last_save = 0
 
         image_index = 0
@@ -140,7 +140,7 @@ def save_model(model, epoch, image_index, optimizer, filename):
 def load_model(filename):
     file_path = Path('checkpoints')/filename
     print('loading model contained in the file', file_path)
-    if(os.path.exists(file_path)):
+    if(Path.exists(file_path)):
         checkpoint = {}
         with open(file_path, 'rb') as file:
             checkpoint = pickle.load(file)
@@ -148,19 +148,22 @@ def load_model(filename):
                 'epoch': checkpoint['epoch'], 
                 'image_index': checkpoint['image_index'], 
                 'optimizer': checkpoint['optimizer']}
+    else:
+        raise FileNotFoundError('Model file not found')
 
-    raise Exception('File not found')
-
+#Looks ups the "checkpoints" folder 
 def load_latest_model():
     path = Path('./checkpoints')
     checkpoints = list(path.glob('*'))
+    if(len(checkpoints) == 0):
+        raise FileNotFoundError('No checkpoint found')
     checkpoints = [os.path.basename(x) for x in checkpoints]
     splits = [x.split('_') for x in checkpoints]
     largest_epoch = max([int(x[1]) for x in splits])
     largest_epoch_splits = list(filter(lambda x: int(x[1]) == largest_epoch, splits))
     largest_im_index = max([int(x[2].split('.')[0]) for x in largest_epoch_splits])
     extension = splits[0][2].split('.')[1]
-    filename = 'checkpoints_'+str(largest_epoch)+'_'+str(largest_im_index)+'.'+extension
+    filename = 'customfcn_'+str(largest_epoch)+'_'+str(largest_im_index)+'.'+extension
     print('latest model', filename)
     return load_model(filename)
 
@@ -207,13 +210,28 @@ def main():
     print('device set')
     # device = torch.device("cpu")
 
-    print('loading alexnet')
-    alexnet = models.alexnet(pretrained=True)
-    print('alexnet loaded')
+    try:
+        checkpoint = load_latest_model()
+        print('checkpoint found. loading state...')
+        cnn = checkpoint['model']
+        epoch = checkpoint['epoch']
+        image_index = checkpoint['image_index']
+        optimizer = checkpoint['optimizer']
+        print('checkpoint state loaded successfully')
 
-    print('creating new fcn-alexnet from scratch')
-    cnn = CustomFCNAlexnet(num_classes=5, alexnet=alexnet)
-    print('cnn loaded')
+    except FileNotFoundError:
+        print('no checkpoint found. starting new fcn-alexnet from scratch')
+        print('loading pre trained alexnet')
+        alexnet = models.alexnet(pretrained=True)
+        print('alexnet loaded')
+
+        print('creating new fcn-alexnet from scratch')
+        cnn = CustomFCNAlexnet(num_classes=5, alexnet=alexnet)
+        print('creation succesful')
+        epoch = 0
+        image_index = 0
+        optimizer = None
+
     print('sending cnn to gpu')
     cnn = cnn.to(device)
     print('gpu transfer successful')
@@ -222,17 +240,19 @@ def main():
         transforms.ToTensor(),
     ])
 
+
     coco_api = COCO("coco\\ground_truth\\instances_train2014.json")
     print('creating dataset')
     coco_dataset = CocoDataset("coco\\images\\", coco_api, transform)
     print('dataset created')
 
     print('creating loader')
-    train_loader = torch.utils.data.DataLoader(coco_dataset, batch_size=8, shuffle=False)
+    train_loader = torch.utils.data.DataLoader(coco_dataset, batch_size=8, shuffle=True)
     print('loader created')
 
     print('training')
-    fit(cnn, train_loader, device)
+    fit(model=cnn, train_dataset=train_loader, device=device, 
+        epoch=epoch, image_index=image_index, optimizer=optimizer)
 
     torch.save(cnn.state_dict(), 'cnn.pt')
 
