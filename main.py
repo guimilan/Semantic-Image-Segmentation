@@ -19,6 +19,8 @@ import json
 from pycocotools.coco import COCO
 from timeit import default_timer as timer
 from custom_fcn_alexnet import CustomFCNAlexnet
+from coco_dataset import CocoDataset
+import datetime
 
 
 # plots an image
@@ -60,6 +62,8 @@ def fit(model, train_dataset, device):
 
     epoch = 0
     running_loss = 1.0
+    image_qtt = 0
+
     while epoch < 2 or running_loss < 10e-3:
         running_loss = 0.0
         print('epoch', epoch)
@@ -74,49 +78,69 @@ def fit(model, train_dataset, device):
             # the variable data contains an entire batch of inputs and their associated labels
 
             #samples, labels = data
-            print('sending data to device')
+            #print('sending data to device')
             device_start = timer()
             samples, labels = samples.to(device), labels.to(device)  # Sends the data to the GPU
             device_end = timer()
-            print('data sent. elapsed time', device_end-device_start)
+            #print('data sent. elapsed time', device_end-device_start)
 
-            print("zeroing grad")
+            #print("zeroing grad")
             optimizer.zero_grad()  # Zeroes the gradient, otherwise it will accumulate at every iteration
             # the result would be that the network would start taking huge parameter jumps as training went on
-            print('grad zeroed')
+            #print('grad zeroed')
 
-            print('inferring...')
+            #print('inferring...')
             infer_start = timer()
             output = model(samples)  # Forward passes the input data
             infer_end = timer()
-            print('inferred')
-            print('time elapsed during inference:', infer_end - infer_start)
+            #print('inferred')
+            #print('time elapsed during inference:', infer_end - infer_start)
 
-            print('computing loss')
+            #print('computing loss')
             loss_start = timer()
             loss = criterion(output, labels)  # Computes the error
             loss.backward()  # Computes the gradient, yielding how much each parameter must be updated
             loss_end = timer()
-            print('loss computed. time elapsed: ', loss_end-loss_start)
 
-            print('updating weights')
+            #print('updating weights')
             weights_start = timer()
             optimizer.step()  # Updates each parameter according to the gradient
             weights_end = timer()
-            print('weights updated. time elapsed: ', weights_end-weights_start)
+            #print('weights updated. time elapsed: ', weights_end-weights_start)
 
             running_loss = loss.item()
             print('running loss', running_loss)
             '''if index % 10 == 9:
                 print('[%d %5d] loss %.3f' % (epoch + 1, index + 1, running_loss / 2000))
                 running_loss = 0.0'''
-            print('loading new batch')
+            #print('loading new batch')
             batch_start = timer()
-            
+
+            image_qtt += samples.size()[0]
+            images_since_last_save +=  samples.size()[0]
+            if(images_since_last_save > 500):
+                print('saving checkpoint', image_qtt)
+                save_model(model, epoch, image_qtt, optimizer, 'custom_fcn_'+epoch+'_'+str(image_qtt))
 
     print('finished training')
 
+#Saves the model as well as information related to training, so it can be resumed later
+def save_model(model, epoch, image_index, optimizer, filename):
+    checkpoint = {'state_dict': model.state_dict(), 'epoch': epoch, 'image_index': image_index, 'optimizer': optimizer}
+    with open(filename, 'wb') as file:
+        pickle.dump(checkpoint)
 
+#Loads a model with the specified filename
+def load_model(filename)
+    path = 
+    if(os.path.exists('checkpoints\\'+filename)):
+        checkpoint = {}
+        with open(filename, 'rb') as file:
+            checkpoint = pickle.load(file)
+        return checkpoint['state_dict'], checkpoint['epoch'], checkpoint['image_index'], checkpoint['optimizer']
+    raise Exception('File not found')
+
+#Legacy code used to test model validation, using an alexnet fine-tuned to the CIFAR-10 dataset
 def validate(model, test_dataset, device):
     correct = 0
     total = 0
@@ -138,109 +162,7 @@ def validate(model, test_dataset, device):
     print('Accuracy of the network: %d %%' % (100 * correct / total))
     return correct, total
 
-
-# Class representing the dataset
-class CocoDataset(Dataset):
-    def __init__(self, image_dir, coco, transform):
-        self.image_dir = image_dir
-        self.coco = coco
-        self.allImgIds = None
-        self.classes = None
-        self.selectClass()
-        self.imgs = coco.loadImgs(self.allImgIds)
-        self.transform = transform
-
-    def __getitem__(self, i):
-        print('loading image')
-        imload_start = timer()
-        image = Image.open(self.image_dir + "\\" + self.imgs[i]['file_name'])
-        if image.mode == 'L':
-            #print('converting gray scale to RGB')
-            image = image.convert('RGB')
-        image = self.transform(image)
-        imload_end = timer()
-        image = self.pad_image(image, 800, 800)
-        print('input image loaded. elapsed time:', imload_end-imload_start)
-
-        print('loading gt')
-        gtload_start = timer()
-        gt = self.load_ground_truth(i, 800, 800)
-        gtload_end = timer()
-        print('gt loaded. elapsed time:', gtload_end-gtload_start)
-        
-        print('gt ops')
-        gtops_start = timer()
-        
-        '''transpose_start = timer()
-        gt = np.transpose(gt, (0, 1, 2))
-        transpose_end = timer()
-        print('transposed elapsed time', transpose_end-transpose_start)'''
-        
-        cast_start = timer()
-        gt = torch.tensor(gt, dtype=torch.long)
-        cast_end = timer()
-        print('cast time', cast_end-cast_start)
-
-        #pad_start = timer()
-        #gt = self.pad_image(gt, 800, 800)
-        #pad_end = timer()
-        #print('pad time', pad_end-pad_start)
-        
-        gtops_end = timer()
-        print('gtops. elapsed time:', gtops_end-gtops_start)
-
-        return image, gt[0,:,:]
-
-    def __len__(self):
-        return len(self.imgs)
-
-    def load_ground_truth(self, i, desired_height, desired_width):
-        annIds = self.coco.getAnnIds(imgIds=self.imgs[i]['id'], iscrowd=None)
-        anns = self.coco.loadAnns(annIds)
-        seg_imageNch = np.zeros((len(self.classes), desired_height, desired_width)).astype(np.uint8)
-        # seg_imageGray = np.zeros((self.imgs[i]['height'], self.imgs[i]['width'])).astype(np.uint8)
-        for i in range(len(anns)):
-            if anns[i]['category_id'] in self.classes.keys():
-                seg_image = self.coco.annToMask(anns[i]).T
-                seg_imageNch[self.classes[anns[i]['category_id']],:seg_image.shape[0],:seg_image.shape[1]] = \
-                seg_imageNch[self.classes[anns[i]['category_id']],:seg_image.shape[0],:seg_image.shape[1]] | seg_image[:,:]
-                # seg_image = (seg_image - (seg_image & seg_imageGray))
-                # seg_imageGray = (seg_imageGray + ((seg_imageGray | seg_image) == 1) * self.classes[anns[i]['category_id']])
-        # seg_imageNch[:, :, 0] = seg_imageGray.astype(np.uint8)
-        return seg_imageNch
-
-    def pad_image(self, source, desired_height, desired_width):
-        padded_image = torch.zeros(source.shape[0], desired_height, desired_width).type(source.type())
-        padded_image[:, :source.size()[1], :source.size()[2]] = source
-
-        return padded_image
-
-    # Custom collating function. Used to combine individual tensors into a single batch
-    # This was made to replace pytorch's default collate during debugging
-    def collate(self, batch):
-        print('collating')
-        data = [item[0] for item in batch]
-        target = [item[1] for item in batch]
-        print('collating successful')
-        return data, target
-
-    def selectClass(self, start=0, end=5):
-        Cats = {}
-        for i in range(len(self.coco.catToImgs)):
-            Cats[i] = len(self.coco.catToImgs[i])
-        Cats = list(sorted(Cats.items(), key=lambda kv: (kv[1], kv[0]), reverse=True))
-        allImgIds = []
-        catIndex = 0
-        catToClass = {}
-        for f in Cats[start:end]:
-            catToClass[f[0]] = catIndex
-            allImgIds = list(set(allImgIds) | set(self.coco.catToImgs[f[0]]))
-            catIndex = catIndex + 1
-        self.allImgIds = allImgIds
-        self.classes = catToClass
-        return self.allImgIds, self.classes
-
-
+#Auxiliary function to plot a Pytorch tensor
 def plot_tensor(tensor):
     plt.imshow(transforms.ToPILImage()(tensor), interpolation="bicubic")
     plt.show()
@@ -261,6 +183,9 @@ def main():
     print('loading alexnet')
     alexnet = models.alexnet(pretrained=True)
     print('alexnet loaded')
+    
+    glob
+
 
     print('loading cnn')
     cnn = CustomFCNAlexnet(num_classes=5, alexnet=alexnet)
@@ -279,7 +204,7 @@ def main():
     print('dataset created')
 
     print('creating loader')
-    train_loader = torch.utils.data.DataLoader(coco_dataset, batch_size=16, shuffle=False)
+    train_loader = torch.utils.data.DataLoader(coco_dataset, batch_size=8, shuffle=False)
     print('loader created')
 
     print('training')

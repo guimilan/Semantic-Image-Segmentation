@@ -17,7 +17,6 @@ class CustomFCNAlexnet(nn.Module):
         super(CustomFCNAlexnet, self).__init__()
 
         # Convolution layers for feature extraction
-        # Sizes: 227x227, 55x55, 27x27, 13x13 e 6x6
         self.conv1 = nn.Sequential(
             alexnet.features[0],  # conv2d(227x227x3, 55x55x64, kernel=11x11, stride=4, padding=2)
             alexnet.features[1],  # relu
@@ -41,29 +40,23 @@ class CustomFCNAlexnet(nn.Module):
             alexnet.features[11],  # relu
         )
         self.conv6 = alexnet.features[12]  # maxpool2d(13x13x256, 6x6x256, kernel=3x3, stride=2) pool 3
-        for param in self.parameters():
-            param.requires_grad = False
 
         # size-1 convolution for pixel-by-pixel prediction
         self.score_conv = nn.Conv2d(256, num_classes, 1)
 
         # Deconvolution layers for restoring the original image
-        # input: 6x6x90, output: 13x13x256
         self.deconv1 = nn.ConvTranspose2d(num_classes, 256, kernel_size=3, stride=2)
 
-        # input: 13x13x256 (skip-connect to conv5's output), output: 27x27x64
         self.deconv2 = nn.ConvTranspose2d(256, 64, kernel_size=3, stride=2)
 
-        # input: 27x27x64 (skip-connect to conv1's output), output: 55x55x64
         self.deconv3 = nn.ConvTranspose2d(64, 192, kernel_size=3, stride=2)
 
-        # input: 55x55x64, output: 227x227xnum_classes
         self.deconv4 = nn.ConvTranspose2d(192, num_classes, kernel_size=8, stride=4)
 
+    #Forward passes the data
+    #Skip connections are formed by summing together the two connected layers' output
     def forward(self, x):
-        print('input shape', x.size())
-        # Forward passes the data
-        # Skip connections are formed by summing together the two connected layers' output
+        #print('input shape', x.size())
         out_conv1 = self.conv1(x)
         # print('conv 1 output shape', out_conv1.size())
 
