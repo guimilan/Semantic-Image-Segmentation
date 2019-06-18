@@ -89,5 +89,5 @@ class CustomFCNAlexnet(nn.Module):
         # print('deconv 3 output shape', out_deconv3.size())
 
         out_deconv4 = self.deconv4(out_deconv3)
-        # print('deconv 4 output shape', out_deconv4.size())
+        final_output = F.softmax(out_deconv4, 1)
         return out_deconv4
