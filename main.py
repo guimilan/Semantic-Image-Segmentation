@@ -132,7 +132,7 @@ def fit(model, train_dataset, device, epoch=0, image_index=0, optimizer=None):
 #Saves the model as well as information related to training, so it can be resumed later
 def save_model(model, epoch, image_index, optimizer, filename):
     filename = Path('checkpoints')/filename
-    checkpoint = {'model': model, 'epoch': epoch, 'image_index': image_index, 'optimizer': optimizer}
+    checkpoint = {'model': model.cpu(), 'epoch': epoch, 'image_index': image_index, 'optimizer': optimizer}
     with open(filename, 'wb+') as file:
         pickle.dump(checkpoint, file)
 
