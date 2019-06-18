@@ -124,6 +124,7 @@ def fit(model, train_dataset, device, epoch=0, image_index=0, optimizer=None):
             if(images_since_last_save > 5000):
                 print('saving checkpoint at image', image_index)
                 save_model(model, epoch, image_index, optimizer, 'customfcn_'+str(epoch)+'_'+str(image_index)+'.pickle')
+                model = model.to(device)
                 images_since_last_save = 0
 
         image_index = 0
