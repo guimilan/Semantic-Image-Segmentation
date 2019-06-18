@@ -195,8 +195,26 @@ def plot_tensor(tensor):
     plt.show()
 
 
-def mask_to_color(net_output):
-    return None
+def Norm(m, new_min, new_max):
+    imax = np.max(m)
+    imin = np.min(m)
+    m_norm = ((m - imin) * ((new_max - new_min) / (imax - imin))) + new_min
+    return m_norm
+
+
+def mask_to_color(net_output, name):
+    h = net_output.shape[1]
+    w = net_output.shape[2]
+    c = net_output.shape[0]
+    seg_imageRGB = np.zeros((h, w, 3))
+    img = np.zeros((h, w, 3))
+    for i in range(c):
+        color_mask = np.random.random((1, 3)).tolist()[0]
+        img[:, :, 0] = net_output[i, :, :] * color_mask[0]
+        img[:, :, 1] = net_output[i, :, :] * color_mask[1]
+        img[:, :, 2] = net_output[i, :, :] * color_mask[2]
+        seg_imageRGB = seg_imageRGB + img
+    imageio.imsave(str(name) + '.jpg', Norm(seg_imageRGB, 0, 255).astype(np.uint8))
 
 
 #Main code for training the custom fcn-alexnet. Checks if there exists a checkpoint for a model in training
