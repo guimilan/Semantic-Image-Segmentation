@@ -21,7 +21,7 @@ from timeit import default_timer as timer
 from custom_fcn_alexnet import CustomFCNAlexnet
 from coco_dataset import CocoDataset
 import datetime
-
+import pickle
 
 # plots an image
 def imshow(img):
@@ -30,9 +30,8 @@ def imshow(img):
     plt.imshow(np.transpose(npimg, (1, 2, 0)))
     plt.show()
 
-
 # (legacy code)Loads the cifar10 dataset for image classification
-# this was used to test fine-tuning a pretrained alexnet, and also
+# this was used to test fine-tuning using a pretrained alexnet, and also
 # to learn the tools for data loading in pytorch
 def load_cifar10(batch_size):
     resize = transforms.Resize((224, 224))
@@ -51,18 +50,18 @@ def load_cifar10(batch_size):
     return train_loader, test_loader, classes
 
 
-def fit(model, train_dataset, device):
+def fit(model, train_dataset, device, epoch=0, image_index=0, optimizer=None):
+    if(optimizer == None):
+        print('instantiating optimizer')
+        optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
+        print('optimizer instantiated')
+    
     criterion = nn.CrossEntropyLoss()  # Error function: cross entropy
-    print('instantiating optimizer')
-    optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9)
-    print('optimizer instantiated')
     # Stochastic gradient descent
     # Initial learning rate: 0.001
     # momentum: 0.9
 
-    epoch = 0
     running_loss = 1.0
-    image_qtt = 0
 
     while epoch < 2 or running_loss < 10e-3:
         running_loss = 0.0
@@ -71,10 +70,11 @@ def fit(model, train_dataset, device):
         # this makes sure the dropout and batch normalization layers perform as expected
         print('loading new batch')
         batch_start = timer()
-        for index, (samples, labels) in enumerate(train_dataset):
+        for index, (samples, labels) in enumerate(train_dataset[image_index:]):
             batch_end  = timer()
             print('batch loaded. time elapsed: ', batch_end-batch_start)
-            
+            if(image_index % 20 == 0):
+                print('current image:', image_index)
             # the variable data contains an entire batch of inputs and their associated labels
 
             #samples, labels = data
@@ -116,29 +116,51 @@ def fit(model, train_dataset, device):
             #print('loading new batch')
             batch_start = timer()
 
-            image_qtt += samples.size()[0]
+            image_index += samples.size()[0]
+
             images_since_last_save +=  samples.size()[0]
             if(images_since_last_save > 500):
-                print('saving checkpoint', image_qtt)
-                save_model(model, epoch, image_qtt, optimizer, 'custom_fcn_'+epoch+'_'+str(image_qtt))
+                print('saving checkpoint at image', image_index)
+                save_model(model, epoch, image_qtt, optimizer, 'custom_fcn_'+epoch+'_'+str(image_index))
+                images_since_last_save = 0
 
+        image_index = 0
     print('finished training')
 
 #Saves the model as well as information related to training, so it can be resumed later
 def save_model(model, epoch, image_index, optimizer, filename):
-    checkpoint = {'state_dict': model.state_dict(), 'epoch': epoch, 'image_index': image_index, 'optimizer': optimizer}
-    with open(filename, 'wb') as file:
+    checkpoint = {'model': model, 'epoch': epoch, 'image_index': image_index, 'optimizer': optimizer}
+    with open('checkpoints\\'+filename, 'wb') as file:
         pickle.dump(checkpoint)
 
 #Loads a model with the specified filename
-def load_model(filename)
-    path = 
-    if(os.path.exists('checkpoints\\'+filename)):
+def load_model(filename):
+    file_path = Path('checkpoints')/filename
+    print('loading model contained in the file', file_path)
+    if(os.path.exists(file_path)):
         checkpoint = {}
-        with open(filename, 'rb') as file:
+        with open(file_path, 'rb') as file:
             checkpoint = pickle.load(file)
-        return checkpoint['state_dict'], checkpoint['epoch'], checkpoint['image_index'], checkpoint['optimizer']
+            return {'model': checkpoint['model'], 
+                'epoch': checkpoint['epoch'], 
+                'image_index': checkpoint['image_index'], 
+                'optimizer': checkpoint['optimizer']}
+
     raise Exception('File not found')
+
+def load_latest_model():
+    path = Path('./checkpoints')
+    checkpoints = list(path.glob('*'))
+    checkpoints = [os.path.basename(x) for x in checkpoints]
+    splits = [x.split('_') for x in checkpoints]
+    largest_epoch = max([int(x[1]) for x in splits])
+    largest_epoch_splits = list(filter(lambda x: int(x[1]) == largest_epoch, splits))
+    largest_im_index = max([int(x[2].split('.')[0]) for x in largest_epoch_splits])
+    extension = splits[0][2].split('.')[1]
+    filename = 'checkpoints_'+str(largest_epoch)+'_'+str(largest_im_index)+'.'+extension
+    print('latest model', filename)
+    return load_model(filename)
+
 
 #Legacy code used to test model validation, using an alexnet fine-tuned to the CIFAR-10 dataset
 def validate(model, test_dataset, device):
@@ -170,8 +192,9 @@ def plot_tensor(tensor):
 def mask_to_color(net_output):
 	return None
 
-# Main code for training (still using legacy code for alexnet finetuning and classification)
-# Presently under modification
+#Main code for training the custom fcn-alexnet. Checks if there exists a checkpoint for a model in training
+#in the ./checkpoints folder. If positive, loads the latest checkpoint, sends it to the GPU
+#and starts training. Otherwise, loads a pretrained alexnet and starts training from there
 def main():
     # sets up cuda
     print("Cuda availability status:", torch.cuda.is_available())
@@ -183,11 +206,8 @@ def main():
     print('loading alexnet')
     alexnet = models.alexnet(pretrained=True)
     print('alexnet loaded')
-    
-    glob
 
-
-    print('loading cnn')
+    print('creating new fcn-alexnet from scratch')
     cnn = CustomFCNAlexnet(num_classes=5, alexnet=alexnet)
     print('cnn loaded')
     print('sending cnn to gpu')
