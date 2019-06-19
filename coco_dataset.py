@@ -29,12 +29,12 @@ class CocoDataset(Dataset):
     # an instance of the COCOAPI object and the torchvision transforms to be applied
     # in the default case, this transform consists only of a PIL image to tensor
     # conversion (transforms.toTensor)
-    def __init__(self, image_dir, coco, transform):
+    def __init__(self, image_dir, coco, transform, starting_class=0, ending_class=5):
         self.image_dir = image_dir
         self.coco = coco
         self.allImgIds = None
         self.classes = None
-        self.selectClass()
+        self.selectClass(start=starting_class, end=ending_class)
         self.imgs = coco.loadImgs(self.allImgIds)
         self.transform = transform
 

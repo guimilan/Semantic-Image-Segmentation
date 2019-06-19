@@ -93,7 +93,7 @@ def fit(model, train_dataset, device, epoch=0, image_index=0, optimizer=None):
 
             #print('inferring...')
             infer_start = timer()
-            output = model(samples)  # Forward passes the input data
+            output = model(samples)[:,:,:800,:800]  # Forward passes the input data
             infer_end = timer()
             #print('inferred')
             #print('time elapsed during inference:', infer_end - infer_start)
@@ -121,7 +121,7 @@ def fit(model, train_dataset, device, epoch=0, image_index=0, optimizer=None):
             image_index += samples.size()[0]
 
             images_since_last_save +=  samples.size()[0]
-            if(images_since_last_save > 20):
+            if(images_since_last_save > 500):
                 print('saving checkpoint at image', image_index)
                 save_model(model, epoch, image_index, optimizer, 'customfcn_'+str(epoch)+'_'+str(image_index)+'.pickle')
                 model = model.to(device)
@@ -221,13 +221,29 @@ def mask_to_color(net_output, name):
     imageio.imsave(str(name) + '.jpg', Norm(seg_imageRGB, 0, 255).astype(np.uint8))
 
 
+def create_coco_data_loader(batch_size, shuffle):
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+    ])
+
+    coco_api = COCO("coco\\ground_truth\\instances_train2014.json")
+    print('creating dataset')
+    coco_dataset = CocoDataset("coco\\images\\", coco_api, transform)
+    print('dataset created')
+
+    print('creating loader')
+    train_loader = torch.utils.data.DataLoader(coco_dataset, batch_size=batch_size, shuffle=shuffle)
+    print('loader created')
+    return train_loader
+
 #Main code for training the custom fcn-alexnet. Checks if there exists a checkpoint for a model in training
 #in the ./checkpoints folder. If positive, loads the latest checkpoint, sends it to the GPU
 #and starts training. Otherwise, loads a pretrained alexnet and starts training from there
 def main():
     # sets up cuda
     print('setting device...')
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu")
     print('device set')
     # device = torch.device("cpu")
 
@@ -257,19 +273,7 @@ def main():
     cnn = cnn.to(device)
     print('gpu transfer successful')
 
-    transform = transforms.Compose([
-        transforms.ToTensor(),
-    ])
-
-    coco_api = COCO("coco\\ground_truth\\instances_train2014.json")
-    print('creating dataset')
-    coco_dataset = CocoDataset("coco\\images\\", coco_api, transform)
-    print('dataset created')
-
-    print('creating loader')
-    train_loader = torch.utils.data.DataLoader(coco_dataset, batch_size=8, shuffle=True)
-    print('loader created')
-
+    train_loader = create_coco_data_loader(batch_size=8, shuffle=True)
     print('training')
     fit(model=cnn, train_dataset=train_loader, device=device, 
         epoch=epoch, image_index=image_index, optimizer=optimizer)

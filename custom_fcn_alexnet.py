@@ -13,9 +13,10 @@ import torch.nn.modules.loss
 class CustomFCNAlexnet(nn.Module):
     # Alexnet-based FCN implementation
     # for the sake of simplicity, at first the input will have an assumed dimension
-    # of 227x227x3
     def __init__(self, num_classes=90, alexnet=None):
         super(CustomFCNAlexnet, self).__init__()
+        #Adds one extra class to stand for the zero-padded pixels
+        num_classes = num_classes + 1
 
         # Convolution layers for feature extraction
         self.conv1 = nn.Sequential(
@@ -89,5 +90,4 @@ class CustomFCNAlexnet(nn.Module):
         # print('deconv 3 output shape', out_deconv3.size())
 
         out_deconv4 = self.deconv4(out_deconv3)
-
         return out_deconv4
