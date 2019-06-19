@@ -121,7 +121,7 @@ def fit(model, train_dataset, device, epoch=0, image_index=0, optimizer=None):
             image_index += samples.size()[0]
 
             images_since_last_save +=  samples.size()[0]
-            if(images_since_last_save > 5000):
+            if(images_since_last_save > 20):
                 print('saving checkpoint at image', image_index)
                 save_model(model, epoch, image_index, optimizer, 'customfcn_'+str(epoch)+'_'+str(image_index)+'.pickle')
                 model = model.to(device)
@@ -134,6 +134,8 @@ def fit(model, train_dataset, device, epoch=0, image_index=0, optimizer=None):
 def save_model(model, epoch, image_index, optimizer, filename):
     filename = Path('checkpoints')/filename
     checkpoint = {'model': model.cpu(), 'epoch': epoch, 'image_index': image_index, 'optimizer': optimizer}
+    torch.save(model.state_dict(), 'state_dict\\state_dict_'+str(image_index)+'.pt')
+
     with open(filename, 'wb+') as file:
         pickle.dump(checkpoint, file)
 
@@ -191,11 +193,12 @@ def validate(model, test_dataset, device):
     print('Accuracy of the network: %d %%' % (100 * correct / total))
     return correct, total
 
+#Utility to plot a tensor
 def plot_tensor(tensor):
     plt.imshow(transforms.ToPILImage()(tensor), interpolation="bicubic")
     plt.show()
 
-
+#Performs image normalization 
 def Norm(m, new_min, new_max):
     imax = np.max(m)
     imin = np.min(m)
@@ -223,7 +226,6 @@ def mask_to_color(net_output, name):
 #and starts training. Otherwise, loads a pretrained alexnet and starts training from there
 def main():
     # sets up cuda
-    print("Cuda availability status:", torch.cuda.is_available())
     print('setting device...')
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('device set')
@@ -258,7 +260,6 @@ def main():
     transform = transforms.Compose([
         transforms.ToTensor(),
     ])
-
 
     coco_api = COCO("coco\\ground_truth\\instances_train2014.json")
     print('creating dataset')
