@@ -71,5 +71,4 @@ class OriginalFCNAlexnet(nn.Module):
 		out7 = self.conv7(out6)
 		out_score = self.score_conv(out7)
 		out_deconv = self.deconv(out_score)
-		print('net output size', out_deconv.size())
 		return out_deconv

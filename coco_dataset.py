@@ -101,7 +101,6 @@ class CocoDataset(Dataset):
             if anns[i]['category_id'] in self.classes.keys():
                 seg_image = self.coco.annToMask(anns[i])
                 h, w = seg_image.shape
-                print(np.unique(seg_image))
                 seg_imageNch[self.classes[anns[i]['category_id']], :h, :w] = \
                     seg_imageNch[self.classes[anns[i]['category_id']], :h, :w] | seg_image[:, :]
                 seg_image = (seg_image - (seg_image & seg_imageGray[:h, :w]))

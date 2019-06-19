@@ -242,8 +242,8 @@ def create_coco_data_loader(batch_size, shuffle):
 def main():
     # sets up cuda
     print('setting device...')
-    #device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    device = torch.device("cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cpu")
     print('device set')
     # device = torch.device("cpu")
 
