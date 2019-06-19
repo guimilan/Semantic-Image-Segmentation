@@ -89,6 +89,8 @@ class CocoDataset(Dataset):
     def __len__(self):
         return len(self.imgs)
 
+        # Returns the segmentation mask for a specified image index
+
     # Returns the segmentation mask for a specified image index
     def load_ground_truth(self, i, desired_height, desired_width):
         annIds = self.coco.getAnnIds(imgIds=self.imgs[i]['id'], iscrowd=None)
@@ -98,11 +100,14 @@ class CocoDataset(Dataset):
         for i in range(len(anns)):
             if anns[i]['category_id'] in self.classes.keys():
                 seg_image = self.coco.annToMask(anns[i])
-                seg_imageNch[self.classes[anns[i]['category_id']], :seg_image.shape[0], :seg_image.shape[1]] = \
-                    seg_imageNch[self.classes[anns[i]['category_id']], :seg_image.shape[0], :seg_image.shape[1]] | seg_image[:, :]
-                seg_image = (seg_image - (seg_image & seg_imageGray[:seg_image.shape[0], :seg_image.shape[1]]))
-                seg_imageGray[:seg_image.shape[0], :seg_image.shape[1]] = (seg_imageGray[:seg_image.shape[0], :seg_image.shape[1]] + (
-                        (seg_imageGray[:seg_image.shape[0], :seg_image.shape[1]] | seg_image) == 1) * self.classes[anns[i]['category_id']])
+                h, w = seg_image.shape
+                print(np.unique(seg_image))
+                seg_imageNch[self.classes[anns[i]['category_id']], :h, :w] = \
+                    seg_imageNch[self.classes[anns[i]['category_id']], :h, :w] | seg_image[:, :]
+                seg_image = (seg_image - (seg_image & seg_imageGray[:h, :w]))
+                #                 print('LGT unique 0: ',i,np.unique(seg_imageGray))
+                seg_imageGray[:h, :w] = (seg_imageGray[:h, :w] | ((seg_imageGray[:h, :w] | seg_image) == 1) * self.classes[anns[i]['category_id']])
+        #                 print('LGT unique 1: ',i,np.unique(seg_imageGray))
         seg_imageNch[0, :, :] = seg_imageGray.astype(np.uint8)
         return seg_imageNch
 
