@@ -94,14 +94,15 @@ class CocoDataset(Dataset):
         annIds = self.coco.getAnnIds(imgIds=self.imgs[i]['id'], iscrowd=None)
         anns = self.coco.loadAnns(annIds)
         seg_imageNch = np.zeros((len(self.classes) + 1, desired_height, desired_width)).astype(np.uint8)
-        seg_imageGray = np.zeros((self.imgs[i]['height'], self.imgs[i]['width'])).astype(np.uint8)
+        seg_imageGray = np.zeros((desired_height, desired_width)).astype(np.uint8)
         for i in range(len(anns)):
             if anns[i]['category_id'] in self.classes.keys():
-                seg_image = self.coco.annToMask(anns[i]).T
+                seg_image = self.coco.annToMask(anns[i])
                 seg_imageNch[self.classes[anns[i]['category_id']], :seg_image.shape[0], :seg_image.shape[1]] = \
                     seg_imageNch[self.classes[anns[i]['category_id']], :seg_image.shape[0], :seg_image.shape[1]] | seg_image[:, :]
-                seg_image = (seg_image - (seg_image & seg_imageGray))
-                seg_imageGray = (seg_imageGray + ((seg_imageGray | seg_image) == 1) * self.classes[anns[i]['category_id']])
+                seg_image = (seg_image - (seg_image & seg_imageGray[:seg_image.shape[0], :seg_image.shape[1]]))
+                seg_imageGray[:seg_image.shape[0], :seg_image.shape[1]] = (seg_imageGray[:seg_image.shape[0], :seg_image.shape[1]] + (
+                        (seg_imageGray[:seg_image.shape[0], :seg_image.shape[1]] | seg_image) == 1) * self.classes[anns[i]['category_id']])
         seg_imageNch[0, :, :] = seg_imageGray.astype(np.uint8)
         return seg_imageNch
 
