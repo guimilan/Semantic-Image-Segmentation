@@ -76,9 +76,13 @@ With a Dataset subclass ready, it is possible to instantiate a DataLoader class,
 
 It is therefore possible to define the training loop as a for loop iterating over the DataLoader. Inside the training loop, it is possible to create an Optimizer object, which contains the optimization backend that provides functionality such as gradient computing and parameter updating. There are several Optimizer subclasses to choose from; for this work, stochastic gradient descent (SGD) was used. 
 
-Having an optimizer, the input sample and the expected output, it is then possible to forward pass the data through the model, obtaining the model's prediction, and then compute the loss. Pytorch also provides several loss functions, including cross entropy loss (in the form of the class CrossEntropyLoss). It is important to note that CrossEntropyLoss automatically applies softmax to the model's prediction, therefore making it unnecessary to explicitly add a softmax layer to the model.
+Having an optimizer, the input sample and the expected output, it is then possible to forward pass the data through the model, obtaining the model's prediction, and then compute the loss. To perform a forward pass, it is sufficient to provide an instance of the class in which the model is contained, ie, FCN. Calling the instance using the input data as an argument will perform the forward pass, ie, FCN(input_sample).
 
-Every error function provides the backward() method, which assesses the error and prompts the optimizer to compute the gradient. 
+Pytorch also provides several loss functions, including cross entropy loss (in the form of the class CrossEntropyLoss). It is important to note that CrossEntropyLoss automatically applies softmax to the model's prediction, therefore making it unnecessary to explicitly add a softmax layer to the model.
+
+Every error function provides the backward() method, which assesses the error and prompts the optimizer to compute the parameters' gradient. optimizer.step() has PyTorch update all the weights on the network based on those gradients, concluding the training loop.
+
+
 
 ### 4.2 Defining the model's structure
 
@@ -89,7 +93,9 @@ Every error function provides the backward() method, which assesses the error an
 ## 6. Code excerpts
 
 ### 6.1 Data loading and preprocessing
-<addr>Code sample</addr>
+
+`This is a code sample`
+
 ### 6.2 Model definition
 
 ### 6.3 Training loop
