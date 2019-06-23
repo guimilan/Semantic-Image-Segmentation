@@ -13,8 +13,9 @@ The aim of this project is to investigate the implementation and the application
 	3. Image sets
 	4. Development
 	5. File structure
-	6. Results
-	7. Conclusion
+	6. Code excerpts
+	7. Results
+	8. Conclusion
 
 ## 1. Development plan
 
@@ -77,10 +78,21 @@ It is therefore possible to define the training loop as a for loop iterating ove
 
 Having an optimizer, the input sample and the expected output, it is then possible to forward pass the data through the model, obtaining the model's prediction, and then compute the loss. Pytorch also provides several loss functions, including cross entropy loss (in the form of the class CrossEntropyLoss). It is important to note that CrossEntropyLoss automatically applies softmax to the model's prediction, therefore making it unnecessary to explicitly add a softmax layer to the model.
 
-### 4.2 Defining the model structure
+Every error function provides the backward() method, which assesses the error and prompts the optimizer to compute the gradient. 
 
+### 4.2 Defining the model's structure
+
+### 4.3 Preprocessing
 
 ## 5. File structure
+
+## 6. Code excerpts
+
+### 6.1 Data loading and preprocessing
+<addr>Code sample</addr>
+### 6.2 Model definition
+
+### 6.3 Training loop
 
 Work started with a survey of existing semantic segmentation models. The FCN-based architectures were deemed the most reasonable for the proposed deadline, both due to the relative ease of comprehension and implementation, as well to the computational power required in comparison with more recent models. 
 
