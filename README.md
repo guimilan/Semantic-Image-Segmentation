@@ -17,9 +17,11 @@ The aim of this project is to investigate the implementation and the application
 	7. Conclusion
 
 ## 1. Development plan
+
 Work will begin with a survey of existing semantic image segmentation algorithms. Once a technique is chosen, a study of its theoretical foundations will be conducted in order to provide a better grasp on the tasks to be accomplished, as well as to better sort through the tools and means available for the task. This will be followed with the selection of the appropriate programming language and libraries for implementation, testing and visualization of the resulting segmented images. In the condition that there is time remaining by the end of that process, competing models will be evaluated, allowing for the making of a comparative study based on academically accepted, objective metrics.
 
 ## 2. Theoretical foundation
+
 Our study found that the image segmentation algorithms that produced the most promising results are those based on machine learning, namely neural network-based deep learning architectures. Notable examples include Fully Convolutional Networks (FCN), Mask R-CNN and Google's DeepLab. 
 
 To the best of our knowledge, the FCNs were the earliest deep learning-based method proposed. Among the cited techniques, they are also the most straightforward, easy to comprehend and develop on the stardard libraries pertaining to the most popular deep learning frameworks. Thus, taking into consideration the timing and computing power constraints on this project, these networks were considered the most viable for implementation, and thereby were chosen as the starting point of our work.
@@ -61,9 +63,16 @@ Public street image sample from the CamVid dataset
 
 ## 4. Development
 
-The Python programming language along with the PyTorch framework were chosen for the task of implementing an Alexnet-based FCN. 
+The Python programming language along with the PyTorch framework were chosen for the task of implementing an Alexnet-based FCN. The reasoning behind this decision comes from the fact that PyTorch follows an imperative, dynamic paradigm in which the computation graph is built during runtime. Thus, it provides simpler ways to interface regular Python code with the actual model building algorithms. This draws sharp contrast with competing libraries such as Tensorflow, that in its most common form requires static graph building, in which communication with the overarching program has to be made through the use of sessions and placeholders (eager execution notwithstanding), resulting in a steeper learning curve. Given that time is a strict constraint to be met, simplicity is a major factor to consider. Besides, PyTorch makes GPU computing simple, which is an absolute requirement for training large models, and it also provides data loading facilities that would lower the development overhead for building a complete training pipeline.
 
-## 3. Progress report
+Following the theoretical study, work began with the initial definition of the model, as well as the experiment of loading a pretrained alexnet, replacing its fully connected layers and fine tuning it to a different dataset to the one it was trained on for the task of classification. The data came from the CIFAR-10 dataset, and a training pipeline was built according to PyTorch's guidelines.
+
+In accordance with the documentation, PyTorch has built-in tensor types that can be directly converted from numpy arrays. It builds tensors for the minibatches to be used in training in an automated way. For this purpose, it provides the Dataset class, which the developer must extend, or inherit from, in one's own class. Three methods must be implemented. The first is __init__, representing the class' constructor. The second method is __getitem__. This method loads a single (input, label) pair from the disk and performs whichever preprocessing the data requires. Finally, the method __length__ must be provided, which is supposed to return an integer describing the full length of the dataset.
+
+With a Dataset subclass ready, it is possible to instantiate a DataLoader class, provided by PyTorch. This class takes a Dataset instance, a batch size and a boolean value representing whether it should shuffle the data. It is possible to iterate over the DataLoader, at every iteration of which it will return a pair of tensors (sample, labels) containing the full input and ground truth minibatches.
+
+
+## 5. File structure
 
 Work started with a survey of existing semantic segmentation models. The FCN-based architectures were deemed the most reasonable for the proposed deadline, both due to the relative ease of comprehension and implementation, as well to the computational power required in comparison with more recent models. 
 
