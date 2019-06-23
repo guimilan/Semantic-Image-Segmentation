@@ -16,6 +16,7 @@ The aim of this project is to investigate the implementation and the application
 	6. Code excerpts
 	7. Results
 	8. Conclusion
+	9. References
 
 ## 1. Development plan
 
@@ -82,11 +83,11 @@ Pytorch also provides several loss functions, including cross entropy loss (in t
 
 Every error function provides the backward() method, which assesses the error and prompts the optimizer to compute the parameters' gradient. optimizer.step() has PyTorch update all the weights on the network based on those gradients, concluding the training loop.
 
-
-
 ### 4.2 Defining the model's structure
 
-### 4.3 Preprocessing
+
+
+### 4.3 Data loading and preprocessing
 
 ## 5. File structure
 
@@ -100,11 +101,6 @@ Every error function provides the backward() method, which assesses the error an
 
 ### 6.3 Training loop
 
-Work started with a survey of existing semantic segmentation models. The FCN-based architectures were deemed the most reasonable for the proposed deadline, both due to the relative ease of comprehension and implementation, as well to the computational power required in comparison with more recent models. 
-
-FCN-based models have been developed on top of several different architectures, notably AlexNet and VGG. For this work, the chosen approach was to take a pretrained Alexnet, and gradually add the layers that turn it into a FCN.
-
-Up to this point, a pretrained Alexnet has been successfully loaded, its layers frozen and fine tuned for classification on a smaller dataset with an accuracy rating of 85%, which is about the reported accuracy value for the Alexnet. Most recently, the classification layers were removed to make way to the first deconvolution layers. Some of the legacy code in which the classification dataset was loaded is still present and undergoing modification. The most recent iteration can be found on the file "cnn.py".
 
 COCO provides its segmentation masks in a compressed, encoded format. Performing decoding and coupling each mask with its corresponding image during training would result in additional computational effort to an already intensive task. Therefore, several preprocessing strategies were attempted. Initially, focus was set on trying to maintain the maximum amount of information from the original dataset as possible while trying to minimize the computational effort required to load the minibatches during training. 
 
@@ -114,9 +110,11 @@ The second approach consisted of generating plain text files for each image, whi
 
 Through experimentation, those approaches were deemed too time-consuming to perform during training, so it was decided that our scope had to be narrowed so as to make training viable on the available hardware. Therefore, experiments will now be performed with a small subset of the classes featured on MS Coco. 
 
-Planned next steps include writing the code for training on MS Coco, which should complete the basic data pipeline that would allow proper experimentation to begin. This will be followed by tweaks to the architecture and fine tuning to specific tasks, such as medical image and street image segmentation. Finally, training on VGG-based FCNs (FCN-32, FCN-16 and FCN-8) will be tested, provided there's enough time left.
+## 7. Results
 
-## References
+## 8. Conclusion
+
+## 9. References
 [1]COCO - Common Objects in Context. Available on http://cocodataset.org/
 
 [2]A benchmark for Endoluminal Scene Segmentation of Colonoscopy Images. Available on https://arxiv.org/pdf/1612.00799.pdf
