@@ -11,29 +11,30 @@ The aim of this project is to investigate the implementation and the application
 	1. Development plan
 	2. Theoretical foundation
 	3. Image sets
-	4. Implementation
+	4. Development
 	5. File structure
 	6. Results
 	7. Conclusion
 
 ## 1. Development plan
-Work will begin with a survey of existing semantic image segmentation algorithms. This will be followed with the selection of
-the appropriate programming language and libraries for implementation, testing and visualization of the resulting
-segmented images. In the condition that there is time remaining by the end of that process, competing models will be 
-evaluated, allowing for the making of a comparative study based on academically accepted, objective metrics.
+Work will begin with a survey of existing semantic image segmentation algorithms. Once a technique is chosen, a study of its theoretical foundations will be conducted in order to provide a better grasp on the tasks to be accomplished, as well as to better sort through the tools and means available for the task. This will be followed with the selection of the appropriate programming language and libraries for implementation, testing and visualization of the resulting segmented images. In the condition that there is time remaining by the end of that process, competing models will be evaluated, allowing for the making of a comparative study based on academically accepted, objective metrics.
 
 ## 2. Theoretical foundation
 Our study found that the image segmentation algorithms that produced the most promising results are those based on machine learning, namely neural network-based deep learning architectures. Notable examples include Fully Convolutional Networks (FCN), Mask R-CNN and Google's DeepLab. 
 
 To the best of our knowledge, the FCNs were the earliest deep learning-based method proposed. Among the cited techniques, they are also the most straightforward, easy to comprehend and develop on the stardard libraries pertaining to the most popular deep learning frameworks. Thus, taking into consideration the timing and computing power constraints on this project, these networks were considered the most viable for implementation, and thereby were chosen as the starting point of our work.
 
-There exist different varieties of fully convolutional networks that follow a common layered structure. The first portion of which is formed by groups of convolutional layers, meant to extract features and reduce the dimensionality of the input image. The second portion, on the other hand, is based on layers that perform transposed convolutions. These layers restore the images original dimension by applying a learneable filter to the first portion's output. In other words, they upsample the segmentation masks via parameters adjusted on the training data, which enables the networks to work on images of variable size. 
+There exist different varieties of fully convolutional networks that follow a common two-portion, layered structure. The first portion of which is formed by groups of convolutional layers, meant to extract features and reduce the dimensionality of the input image. The second portion, on the other hand, is based on layers that perform transposed convolutions. These layers restore the images' original dimension by applying a learneable filter to the first portion's output. In other words, they upsample the segmentation masks via parameters adjusted on the training data, which enables the networks to work on images of variable size. 
 
 Some variations of the FCN also make use of an additional feature in the form of skip connections. Skip connections combine earlier, lower level feature maps produced on the initial layers to later, higher level features captured on the model's final layers. This is employed as a device meant to address the vanishing and exploding gradient problems presented by deeper networks. Respectively, this means the observed phenomenom of having gradients acquire exceedingly small or large values during backpropagation, impairing the initial layer's ability to learn from data. 
 
-Skip connections are formed by either concatenation or summation of the earlier layer's output to the later layer's input. This is only possible if both feature maps share the same dimensionality, and therefore it is usually done between a convolution and a transposed convolution. 
+Skip connections are formed by either concatenation or summation of the earlier layer's output to the later layer's input. This is only possible if both feature maps share the same dimensionality, and therefore it is usually done between a convolution and a transposed convolution.
 
 The network's final output consists of a k-channel image, where k is equal to the number of object classes the network is being trained to segment. The pixel value on each channel N consists of the probability of said pixel belonging to class N, thus, the values of a given pixel (x,y) on all the channels must sum to one. It is therefore advisable to make a channel-wise softmax layer the last layer in the network.
+
+Having defined the architecture, it is then necessary to modify the model's parameters to fit the input data, which is usually called training. Training, particularly when it comes to deep learning, is a highly computationally intensive task which requires massive amounts of annotated data to accomplish. FCNs, however, exhibit the distinctive trait of having the aforementioned first portion be based on pre-existing networks, tipically the Alexnet and VGG. This has the advantage of enabling the model designer to incorporate layers from pre-trained instances of these networks into the FCN, in a practice known as fine tuning. As a result, the model as a whole requires less data and time to train.
+
+Next, it is necessary to take into account that the backpropagation method used for training is based on the gradient descent optimization technique, which requires a loss function to be defined. Given that the softmax layer outputs a set of probability distributions and the ground truth provides the real probability distribution expected for each correctly classified pixel, the Cross-entropy function was chosen as the loss. Cross-entropy compares the amount of information necessary to encode events of a hypothetical probability distribution with the expected amount of information necessary to encode information from a reference probability distribution. The lower the cross-entropy, the more similar the two distributions are, thus making it an appropriate optimization target. 
 
 Finally, it is necessary to find ways to measure model accuracy over the task of image segmentation. Fidelity of the segmentation mask to the ground truth used for training can be assessed by computing the intersection-over-union (IoU) of each segmentation mask produced at the output of the network to the one contained in the ground truth. 
 
@@ -58,15 +59,9 @@ Medical image sample from the Polyp-7 dataset
 
 Public street image sample from the CamVid dataset
 
-## 2. Development plan
+## 4. Development
 
-Studies will focus on the FCN architecture. This network is comprised of two main sections: convolution for feature extraction and deconvolution for segmentation mask generation. In some versions of the network (FC-8 and FC-16), these two sections are also interconnected by skip layers. These are added with the goal of allowing the segmentation layers to produce finer masks by combining lower level, global information from earlier layers with fine-grained, local information from later layers.
-
-For the first section of the network, the original paper [4] made use of the convolutional layers of a pretrained Alexnet. Thus, in order to save time, transfer learning will be performed, by taking and freezing the convolutional layers of such a network trained on the Imagenet dataset, like the one provided by torchvision [5]. The rest of the network will then be trained on MS Coco. Subsequently, for the smaller datasets, only the final layer will be fine tuned instead of training the whole network again.
-
-More modern implementations are built on top of the pretrained layers of a VGG network. This will be attempted as long as there is enough time left after the experiments with FCN-Alexnet have been performed.
-
-Implementation will be done on PyTorch using CUDA.
+The Python programming language along with the PyTorch framework were chosen for the task of implementing an Alexnet-based FCN. 
 
 ## 3. Progress report
 
