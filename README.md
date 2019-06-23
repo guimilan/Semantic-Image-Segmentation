@@ -67,9 +67,17 @@ The Python programming language along with the PyTorch framework were chosen for
 
 Following the theoretical study, work began with the initial definition of the model, as well as the experiment of loading a pretrained alexnet, replacing its fully connected layers and fine tuning it to a different dataset to the one it was trained on for the task of classification. The data came from the CIFAR-10 dataset, and a training pipeline was built according to PyTorch's guidelines.
 
+### 4.1 Building a data pipeline
+
 In accordance with the documentation, PyTorch has built-in tensor types that can be directly converted from numpy arrays. It builds tensors for the minibatches to be used in training in an automated way. For this purpose, it provides the Dataset class, which the developer must extend, or inherit from, in one's own class. Three methods must be implemented. The first is __init__, representing the class' constructor. The second method is __getitem__. This method loads a single (input, label) pair from the disk and performs whichever preprocessing the data requires. Finally, the method __length__ must be provided, which is supposed to return an integer describing the full length of the dataset.
 
 With a Dataset subclass ready, it is possible to instantiate a DataLoader class, provided by PyTorch. This class takes a Dataset instance, a batch size and a boolean value representing whether it should shuffle the data. It is possible to iterate over the DataLoader, at every iteration of which it will return a pair of tensors (sample, labels) containing the full input and ground truth minibatches.
+
+It is therefore possible to define the training loop as a for loop iterating over the DataLoader. Inside the training loop, it is possible to create an Optimizer object, which contains the optimization backend that provides functionality such as gradient computing and parameter updating. There are several Optimizer subclasses to choose from; for this work, stochastic gradient descent (SGD) was used. 
+
+Having an optimizer, the input sample and the expected output, it is then possible to forward pass the data through the model, obtaining the model's prediction, and then compute the loss. Pytorch also provides several loss functions, including cross entropy loss (in the form of the class CrossEntropyLoss). It is important to note that CrossEntropyLoss automatically applies softmax to the model's prediction, therefore making it unnecessary to explicitly add a softmax layer to the model.
+
+### 4.2 Defining the model structure
 
 
 ## 5. File structure
