@@ -90,11 +90,9 @@ Every error function provides the backward() method, which assesses the error an
 
 Pytorch offers a Module class, which abstracts a neural network's components in a way that allows them to be easily integrated into different architectures. In fact, entire neural networks can be embedded, as long as they subclass Module.
 
-Thus, the proposed architecture is defined in the CustomFCNAlexnet class, which extends Module and progressively adds Alexnet's layers to its own. Layers have been grouped into Sequential modules, which consist of essentially atomic blocks that may perform multiple operations, such as a convolution followed by rectified linear unit (ReLU) activation and max pooling, in a single function call. Two such blocks are stacked, followed by 3 sequentials comprised of convolutions followed by ReLU. A single scoring convolution is then added, after which 5 transposed convolution layers follow. 
+Thus, the proposed architecture is defined in the CustomFCNAlexnet class, which extends Module and progressively adds Alexnet's layers to its own. Layers have been grouped into Sequential modules, which consist of essentially atomic blocks that may wrap multiple operations, such as a convolution followed by rectified linear unit (ReLU) activation and max pooling, in a single function call. Two such blocks are stacked, followed by 3 sequentials comprised of convolutions followed by ReLU. A single scoring convolution is then added, after which 5 transposed convolution layers follow. Skip connections are performed during the forward pass by summing together the output of the connected layers.  
 
-Skip connections are performed during the forward pass, by summing together the output of the connected layers.  
-
-
+A second model was implemented in the class OriginalFCNAlexnet. It follows the original FCN architecture more closely, however its training loop was never fully implemented due to timing constraints. Since it is incompatible with PyTorch's pretrained model, all of its layers were randomly initialized. This was also a major factor in the decision to discontinue this line of work, considering the computational burden would lie beyond what this projects resources could afford.
 
 ### 4.3 Data loading and preprocessing
 
