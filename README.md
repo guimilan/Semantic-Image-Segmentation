@@ -37,7 +37,7 @@ The network's final output consists of a k-channel image, where k is equal to th
 
 Having defined the architecture, it is then necessary to modify the model's parameters to fit the input data, which is usually called training. Training, particularly when it comes to deep learning, is a highly computationally intensive task which requires massive amounts of annotated data to accomplish. FCNs, however, exhibit the distinctive trait of having the aforementioned first portion be based on pre-existing networks, tipically the Alexnet and VGG. This has the advantage of enabling the model designer to incorporate layers from pre-trained instances of these networks into the FCN, in a practice known as fine tuning. As a result, the model as a whole requires less data and time to train. 
 
-In this work, PyTorch's pretrained Alexnet was employed as the first portion of the network. It is important to note that the Pytorch implementation's architecture differs from the Alexnet used in the paper where the FCN was originally proposed, mainly in the number of convolutions per layer as well as the kernel size. This might prompt further study in which the original paper's approach could be tested against our model, as a way to assess the impact of each adjustment in segmentation accuracy.
+In this work, PyTorch's pretrained Alexnet was employed as the first portion of the network. It is important to note that the Pytorch implementation's architecture differs from the Alexnet used in the paper where the FCN was originally proposed, mainly in the number of convolutions per layer as well as the kernel size. This might prompt further study in which the original paper's approach could be tested against our model as a way to assess the impact of each adjustment in segmentation accuracy.
 
 It is also of note that, due to the inclusion of skip connections between early and later layers, none of the pretrained layers were frozen, so that their weights are loaded as a form of initialization. The tranposed convolution layers are initialized randomly.
 
@@ -99,13 +99,7 @@ A second model was implemented in the class OriginalFCNAlexnet. It follows the o
 ## 5. File structure
 
 
-COCO provides its segmentation masks in a compressed, encoded format. Performing decoding and coupling each mask with its corresponding image during training would result in additional computational effort to an already intensive task. Therefore, several preprocessing strategies were attempted. Initially, focus was set on trying to maintain the maximum amount of information from the original dataset as possible while trying to minimize the computational effort required to load the minibatches during training. 
-
-The first attempt involved generating one-channel images, in which each pixel had the value corresponding to its class id as annotated in the ground truth. During training, each minibatch would expand the images into 90-channel images, 90 being the total number of classes provided by Coco. After expansion, each pixel on each channel would contain a binary value, with 1 meaning the pixel on location (x,y) and channel k belongs to class k, and a 0 meaning it doesn't. Only a single channel would contain a value of 1 for a pixel, while all the others would show 0. 
-
-The second approach consisted of generating plain text files for each image, which would contain a matrix for every object category featured in the respective image. Those matrixes would represent the channels of the 90-channel image used during training, in which a value of 1 at pixel (x,y) and matrix k would mean that that pixel belongs to class k. Matrixes which had only null values were not stored and their absence would imply a null matrix. Metadata contained in the files would inform which class each matrix belongs to.
-
-Through experimentation, those approaches were deemed too time-consuming to perform during training, so it was decided that our scope had to be narrowed so as to make training viable on the available hardware. Therefore, experiments will now be performed with a small subset of the classes featured on MS Coco. 
+## 6. Code excerpts
 
 ## 7. Results
 
