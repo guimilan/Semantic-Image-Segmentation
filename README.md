@@ -101,9 +101,9 @@ A second model was implemented in the class OriginalFCNAlexnet. It follows the o
 ### 4.3 Data loading and preprocessing
 
 ## 5. File structure
-	
+In this section, the content of each source file is indexed. Further documentation is available as commentary on each file.
+
 ### 5.1 ./main.py
-This file contains the following functions:
 
 __fit__: performs the main training loop
 
