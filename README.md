@@ -101,15 +101,16 @@ A second model was implemented in the class OriginalFCNAlexnet. It follows the o
 ### 4.3 Data loading and preprocessing
 
 ## 5. File structure
-	* ./main.py
+	
+	### 5.1 ./main.py
 	This file contains the following functions:
-	
+
 	fit: performs the main training loop
-	
+
 	save_model: saves a model to disk in binary form into the ./checkpoints folder
-	
+
 	load_model: looks up a model in the ./checkpoints folder and loads it from disk 
-	
+
 	load_latest_model: parses the models in the ./checkpoints folder and loads the latest one, according to the 
 	naming convention adopted during saving 
 
@@ -122,18 +123,18 @@ A second model was implemented in the class OriginalFCNAlexnet. It follows the o
 	Norm: normalizes an array
 
 	load_cifar10: legacy code, originally used to load the cifar-10 dataset used for the study of using pytorch for classification
-	 
-	* ./custom_fcn_alexnet.py
+
+	### 5.2./custom_fcn_alexnet.py
 	
-	* ./coco_dataset.py
+	### 5.3 ./coco_dataset.py
 
-	* ./original_fcn_alexnet.py
+	### 5.4 ./original_fcn_alexnet.py
 
-	* ./train_original.py
+	### 5.5 ./train_original.py
 
-	* ./Semantic Segmentation - Practical example.ipynb
+	### 5.6 ./Semantic Segmentation - Practical example.ipynb
 
-	* ./utils.py
+	### 5.7 * ./utils.py
 
 ## 6. Code excerpts
 
