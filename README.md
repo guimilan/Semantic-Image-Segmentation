@@ -124,7 +124,18 @@ __Norm__: normalizes an array
 
 __load_cifar10__: legacy code, originally used to load the cifar-10 dataset used for the study of using pytorch for classification
 
+__mask_to_color__: turns a segmentation mask into a colored, plottable image
+
+__create_coco_data_loader__: loads a coco dataset instance and return a DataLoader that fetches input samples and ground truth from coco
+
+__main__: runs the training loop
+
 ### 5.2./custom_fcn_alexnet.py
+__class CustomFcnALexnet__: class containing the definition of this work's customized FCN-Alexnet
+
+__init__: builds the model
+
+__forward__: performs a forward pass through the network
 
 ### 5.3 ./coco_dataset.py
 
