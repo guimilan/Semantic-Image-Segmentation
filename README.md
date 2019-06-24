@@ -101,14 +101,19 @@ A second model was implemented in the class OriginalFCNAlexnet. It follows the o
 ### 4.3 Data loading and preprocessing
 
 ## 5. File structure
-	1. ./main.py
-	2. ./custom_fcn_alexnet.py
-	3. ./coco_dataset.py
-	4. ./original_fcn_alexnet.py
-	5. ./train_original.py
-	6. ./Semantic Segmentation - Practical example.ipynb
-	7. ./utils.py
-	8. 
+	* ./main.py
+	
+	* ./custom_fcn_alexnet.py
+	
+	* ./coco_dataset.py
+
+	* ./original_fcn_alexnet.py
+
+	* ./train_original.py
+
+	* ./Semantic Segmentation - Practical example.ipynb
+
+	* ./utils.py
 
 ## 6. Code excerpts
 
