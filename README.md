@@ -102,7 +102,27 @@ A second model was implemented in the class OriginalFCNAlexnet. It follows the o
 
 ## 5. File structure
 	* ./main.py
+	This file contains the following functions:
 	
+	fit: performs the main training loop
+	
+	save_model: saves a model to disk in binary form into the ./checkpoints folder
+	
+	load_model: looks up a model in the ./checkpoints folder and loads it from disk 
+	
+	load_latest_model: parses the models in the ./checkpoints folder and loads the latest one, according to the 
+	naming convention adopted during saving 
+
+	validate: legacy code, originally used to validate a classification alexnet on the cifar-10 dataset
+
+	norm: normalizes an array
+
+	plot_tensor: plots a pytorch tensor as a matplotlib plot
+
+	Norm: normalizes an array
+
+	load_cifar10: legacy code, originally used to load the cifar-10 dataset used for the study of using pytorch for classification
+	 
 	* ./custom_fcn_alexnet.py
 	
 	* ./coco_dataset.py
