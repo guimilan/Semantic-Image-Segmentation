@@ -131,7 +131,8 @@ __create_coco_data_loader__: loads a coco dataset instance and return a DataLoad
 __main__: runs the training loop
 
 ### 5.2./custom_fcn_alexnet.py
-__class CustomFcnALexnet__: class containing the definition of this work's customized FCN-Alexnet
+
+__class CustomFCNALexnet__: class containing the definition of this work's customized FCN-Alexnet
 
 __init__: builds the model
 
@@ -152,6 +153,7 @@ __forward__: performs a forward pass through the network
 ## 7. Results
 
 ## 8. Conclusion
+Due to the strict time constraints imposed on this project, not all experiments and measurements could be fully realized. However, the obtained results were considered satisfactory, with successful semantic segmentation being achieved with only a small subset of the entire database having been used for training. The architectured, thus, surpassed our initial expectations, and the originally proposed ideas remain as possible avenues for future study. 
 
 ## 9. References
 [1]COCO - Common Objects in Context. Available on http://cocodataset.org/
