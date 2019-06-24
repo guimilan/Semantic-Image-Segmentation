@@ -134,7 +134,7 @@ __main__: runs the training loop
 
 __class CustomFCNALexnet__: class containing the definition of this work's customized FCN-Alexnet
 
-__init__: builds the model
+__init__: Constructor that builds a custom FCN-Alexnet
 
 __forward__: performs a forward pass through the network
 
