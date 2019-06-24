@@ -102,7 +102,7 @@ A second model was implemented in the class OriginalFCNAlexnet. It follows the o
 
 ## 5. File structure
 	
-### 5.1 ./main.py
+### 5.1 __./main.py__
 This file contains the following functions:
 
 fit: performs the main training loop
@@ -124,17 +124,17 @@ Norm: normalizes an array
 
 load_cifar10: legacy code, originally used to load the cifar-10 dataset used for the study of using pytorch for classification
 
-### 5.2./custom_fcn_alexnet.py
+### __5.2./custom_fcn_alexnet.py__
 
-### 5.3 ./coco_dataset.py
+### __5.3 ./coco_dataset.py__
 
-### 5.4 ./original_fcn_alexnet.py
+### __5.4 ./original_fcn_alexnet.py__
 
-### 5.5 ./train_original.py
+### __5.5 ./train_original.py__
 
-### 5.6 ./Semantic Segmentation - Practical example.ipynb
+### __5.6 ./Semantic Segmentation - Practical example.ipynb__
 
-### 5.7 * ./utils.py
+### __5.7 ./utils.py__
 
 ## 6. Code excerpts
 
