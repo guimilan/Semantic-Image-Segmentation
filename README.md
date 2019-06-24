@@ -100,6 +100,15 @@ A second model was implemented in the class OriginalFCNAlexnet. It follows the o
 
 ### 4.3 Data loading and preprocessing
 
+COCO provides its segmentation masks in a compressed, encoded format. Performing decoding and coupling each mask with its corresponding image during training would result in additional computational effort to an already intensive task. Therefore, several preprocessing strategies were attempted. Initially, focus was set on trying to maintain the maximum amount of information from the original dataset as possible while trying to minimize the computational effort required to load the minibatches during training.
+
+The first attempt involved generating one-channel images, in which each pixel had the value corresponding to its class id as annotated in the ground truth. During training, each minibatch would expand the images into 90-channel images, 90 being the total number of classes provided by Coco. After expansion, each pixel on each channel would contain a binary value, with 1 meaning the pixel on location (x,y) and channel k belongs to class k, and a 0 meaning it doesn't. Only a single channel would contain a value of 1 for a pixel, while all the others would show 0.
+
+The second approach consisted of generating plain text files for each image, which would contain a matrix for every object category featured in the respective image. Those matrixes would represent the channels of the 90-channel image used during training, in which a value of 1 at pixel (x,y) and matrix k would mean that that pixel belongs to class k. Matrixes which had only null values were not stored and their absence would imply a null matrix. Metadata contained in the files would inform which class each matrix belongs to.
+Through experimentation, those approaches were deemed too time-consuming to perform during training, so it was decided that our scope had to be narrowed to make training viable on the available hardware. Therefore, experiments will now be performed with a small subset of the classes featured on MS Coco.
+
+Finally, the last approach consisted in the creation of a subset class from Pytorch’s Dataset class and instantiate a MS COCO API class in order to load images and generate ground truth for further usage at training stage. In order to archive that, it was provided the init, getitem and lenght methods to satisfy Pytorch standards. Loading and generating ground truth images in runtime significantly lowered the task time spent regarding the others approaches.
+
 ## 5. File structure
 In this section, the content of each source file is indexed. Further documentation is available as commentary on each file.
 
