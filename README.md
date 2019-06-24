@@ -13,10 +13,9 @@ The aim of this project is to investigate the implementation and the application
 	3. Image sets
 	4. Development
 	5. File structure
-	6. Code excerpts
-	7. Results
-	8. Conclusion
-	9. References
+	6. Results
+	7. Conclusion
+	8. References
 
 ## 1. Development plan
 
@@ -36,7 +35,9 @@ Skip connections are formed by either concatenation or summation of the earlier 
 
 The network's final output consists of a k-channel image, where k is equal to the number of object classes the network is being trained to segment. The pixel value on each channel N consists of the probability of said pixel belonging to class N, thus, the values of a given pixel (x,y) on all the channels must sum to one. It is therefore advisable to make a channel-wise softmax layer the last layer in the network.
 
-Having defined the architecture, it is then necessary to modify the model's parameters to fit the input data, which is usually called training. Training, particularly when it comes to deep learning, is a highly computationally intensive task which requires massive amounts of annotated data to accomplish. FCNs, however, exhibit the distinctive trait of having the aforementioned first portion be based on pre-existing networks, tipically the Alexnet and VGG. This has the advantage of enabling the model designer to incorporate layers from pre-trained instances of these networks into the FCN, in a practice known as fine tuning. As a result, the model as a whole requires less data and time to train.
+Having defined the architecture, it is then necessary to modify the model's parameters to fit the input data, which is usually called training. Training, particularly when it comes to deep learning, is a highly computationally intensive task which requires massive amounts of annotated data to accomplish. FCNs, however, exhibit the distinctive trait of having the aforementioned first portion be based on pre-existing networks, tipically the Alexnet and VGG. This has the advantage of enabling the model designer to incorporate layers from pre-trained instances of these networks into the FCN, in a practice known as fine tuning. As a result, the model as a whole requires less data and time to train. 
+
+In this work, PyTorch's pretrained Alexnet was employed as the first portion of the network. Due to the existence of skip connections between early and later layers, none of its layers were frozen, so that its weights are loaded as a form of initialization. The tranposed convolution layers are initialized randomly.
 
 Next, it is necessary to take into account that the backpropagation method used for training is based on the gradient descent optimization technique, which requires a loss function to be defined. Given that the softmax layer outputs a set of probability distributions and the ground truth provides the real probability distribution expected for each correctly classified pixel, the Cross-entropy function was chosen as the loss. Cross-entropy compares the amount of information necessary to encode events of a hypothetical probability distribution with the expected amount of information necessary to encode information from a reference probability distribution. The lower the cross-entropy, the more similar the two distributions are, thus making it an appropriate optimization target. 
 
@@ -52,7 +53,7 @@ pictures displaying common objects, such as the sample below, as well as the gro
 Sample image from MS Coco
 
 It is expected that the image quantity and diversity will enable the model to capture general features. This should, in turn, allow fine tuning on smaller datasets to achieve reasonable performance. Two such datasets include Polyp-7, comprised of 
-segmented medical images by the Computer Vision Center (CVC) of Barcelona[2], and CamVid[3], which provides segmented videos and still images of public streets during daylight.
+segmented medical images provided by the Computer Vision Center (CVC) of Barcelona[2], and CamVid[3], which offers segmented videos and still images of public streets during daylight.
 
 
 <img src="https://i.ibb.co/NNk3Vyf/polyp.png" alt="Polyp sample" width="200" height="200">
@@ -77,7 +78,7 @@ With a Dataset subclass ready, it is possible to instantiate a DataLoader class,
 
 It is therefore possible to define the training loop as a for loop iterating over the DataLoader. Inside the training loop, it is possible to create an Optimizer object, which contains the optimization backend that provides functionality such as gradient computing and parameter updating. There are several Optimizer subclasses to choose from; for this work, stochastic gradient descent (SGD) was used. 
 
-Having an optimizer, the input sample and the expected output, it is then possible to forward pass the data through the model, obtaining the model's prediction, and then compute the loss. To perform a forward pass, it is sufficient to provide an instance of the class in which the model is contained, ie, FCN. Calling the instance using the input data as an argument will perform the forward pass, ie, FCN(input_sample).
+Having an optimizer, the input sample and the expected output, it is then possible to forward pass the data through the model, obtain the its prediction, and then compute the loss. To perform a forward pass, it is sufficient to provide an instance of the class in which the model is contained, ie, FCN. Calling the instance using the input data as an argument will perform the forward pass, ie, FCN(input_sample).
 
 Pytorch also provides several loss functions, including cross entropy loss (in the form of the class CrossEntropyLoss). It is important to note that CrossEntropyLoss automatically applies softmax to the model's prediction, therefore making it unnecessary to explicitly add a softmax layer to the model.
 
@@ -85,21 +86,17 @@ Every error function provides the backward() method, which assesses the error an
 
 ### 4.2 Defining the model's structure
 
+Pytorch offers a Module class, which abstracts a neural network's components in a way that allows them to be easily integrated into different architectures. In fact, entire neural networks can be embedded, as long as they subclass Module.
+
+Thus, the proposed architecture is defined in the CustomFCNAlexnet class, which extends Module and progressively adds Alexnet's layers to its own. Layers have been grouped into Sequential modules, which consist of essentially atomic blocks that may perform multiple operations, such as a convolution followed by rectified linear unit (ReLU) activation and max pooling, in a single function call. Two such blocks are stacked, followed by 3 sequentials comprised of convolutions followed by ReLU. A single scoring convolution is then added, after which 5 transposed convolution layers follow. 
+
+Skip connections are performed during the forward pass, by summing together the output of the connected layers.  
+
 
 
 ### 4.3 Data loading and preprocessing
 
 ## 5. File structure
-
-## 6. Code excerpts
-
-### 6.1 Data loading and preprocessing
-
-`This is a code sample`
-
-### 6.2 Model definition
-
-### 6.3 Training loop
 
 
 COCO provides its segmentation masks in a compressed, encoded format. Performing decoding and coupling each mask with its corresponding image during training would result in additional computational effort to an already intensive task. Therefore, several preprocessing strategies were attempted. Initially, focus was set on trying to maintain the maximum amount of information from the original dataset as possible while trying to minimize the computational effort required to load the minibatches during training. 

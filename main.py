@@ -64,11 +64,14 @@ def fit(model, train_dataset, device, epoch=0, image_index=0, optimizer=None):
     running_loss = 1.0
     images_since_last_save = 0
 
+    #Runs training for two epochs (iterates over the 87 thousand images twice)
     while epoch < 2 or running_loss < 10e-3:
         running_loss = 0.0
         print('epoch', epoch)
         model.train()  # Sets a flag indicating the code that follows performs training
-        # this makes sure the dropout and batch normalization layers perform as expected
+        # this makes sure training functionality like dropout and batch normalization perform 
+        #as expected
+        
         print('loading new batch')
         batch_start = timer()
 
