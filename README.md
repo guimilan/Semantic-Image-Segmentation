@@ -132,7 +132,7 @@ __main__: runs the training loop
 
 ### 5.2./custom_fcn_alexnet.py
 
-__class CustomFCNALexnet__: class containing the definition of this work's customized FCN-Alexnet
+__class CustomFCNALexnet__: Class containing the definition of this work's customized FCN-Alexnet
 
 __init__: Constructor that builds a custom FCN-Alexnet
 
@@ -140,9 +140,21 @@ __forward__: performs a forward pass through the network
 
 ### 5.3 ./coco_dataset.py
 
+__class CocoDataset__: Class representing the Coco dataset. A subclass of PyTorch's dataset, it is used to feed the 
+DataLoader that manages the training data
+
+__init__: Constructor for CocoDataset instances
+
+__getitem__: defines an instance's behavior when indexed by an integer, ie, instance[i], and must return an (input sample, ground truth) pair.  This method is used by the DataLoader to build each minibatch
+
+__len__: returns an integer representing the dataset's total length. This is also required by the DataLoader
+
+__load_ground_truth__: loads and returns the segmentation mask for an image
+
+
 ### 5.4 ./original_fcn_alexnet.py
 
-__class OriginalFCNAlexnet__: class containing a FCN-Alexnet based on the network proposed on original paper
+__class OriginalFCNAlexnet__: Class containing a FCN-Alexnet based on the network proposed on original paper
 
 __init__: Builds an instance of OriginalFCNAlexnet
 
@@ -155,7 +167,6 @@ __main__: script initially written to perform tests on the OriginalFCNAlexnet
 ### 5.6 ./Semantic Segmentation - Practical example.ipynb
 
 This is the Jupyter notebook used to present the achieved results . It illustrates how to load the model, perform inference and visualize the results produced by the network
-
 
 ## 6. Code excerpts
 
