@@ -142,9 +142,19 @@ __forward__: performs a forward pass through the network
 
 ### 5.4 ./original_fcn_alexnet.py
 
+__class OriginalFCNAlexnet__: class containing a FCN-Alexnet based on the network proposed on original paper
+
+__init__: Builds an instance of OriginalFCNAlexnet
+
+__forward__: performs a forward pass through the network
+
 ### 5.5 ./train_original.py
 
+__main__: script initially written to perform tests on the OriginalFCNAlexnet
+
 ### 5.6 ./Semantic Segmentation - Practical example.ipynb
+
+This is the Jupyter notebook used to present the achieved results . It illustrates how to load the model, perform inference and visualize the results produced by the network.
 
 ### 5.7 ./utils.py
 
