@@ -12,10 +12,14 @@ The aim of this project is to investigate the implementation and the application
 	2. Theoretical foundation
 	3. Image sets
 	4. Development
+		4.1 Building a data pipeline
+		4.2 Defining the model's structure
+		4.3 Data loading and preprocessing
 	5. File structure
-	6. Results
-	7. Conclusion
-	8. References
+	6. Code excerpts
+	7. Results
+	8. Conclusion
+	9. References
 
 ## 1. Development plan
 
