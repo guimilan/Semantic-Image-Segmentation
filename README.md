@@ -151,6 +151,11 @@ __len__: returns an integer representing the dataset's total length. This is als
 
 __load_ground_truth__: loads and returns the segmentation mask for an image
 
+__pad_image__: pads an image to the specified size. PyTorch's minibatches requires every image tensor to have the same dimension, thus the need for this function.
+
+__collate__: overrides the default PyTorch behavior for stacking several tensors into a single one. Used during debugging.
+
+__selectClass__: returns the ids for all images that contain segmentation masks for the given class id range  
 
 ### 5.4 ./original_fcn_alexnet.py
 
