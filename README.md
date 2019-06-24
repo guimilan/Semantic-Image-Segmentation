@@ -154,9 +154,11 @@ __main__: script initially written to perform tests on the OriginalFCNAlexnet
 
 ### 5.6 ./Semantic Segmentation - Practical example.ipynb
 
-This is the Jupyter notebook used to present the achieved results . It illustrates how to load the model, perform inference and visualize the results produced by the network.
+This is the Jupyter notebook used to present the achieved results . It illustrates how to load the model, perform inference and visualize the results produced by the network
 
 ### 5.7 ./utils.py
+
+Utility functions used to compute the expected output dimensions of convolutional and tranposed convolution layers
 
 ## 6. Code excerpts
 
