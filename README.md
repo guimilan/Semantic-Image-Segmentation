@@ -184,6 +184,21 @@ This is the Jupyter notebook used to present the achieved results . It illustrat
 
 ## 6. Code excerpts
 
+Sample code of the Custom FCN-Alexnet  
+
+<img src="https://content.screencast.com/users/romeubertho/folders/Snagit/media/6c29c990-5f84-44cc-b802-3708cd817cd9/06.24.2019-23.35.png" align="center">
+
+Sample code of the CocoDataset responsible to handle dataset preprocessing. The methods below are required to satisfy Pytorch standards.
+
+<img src="https://content.screencast.com/users/romeubertho/folders/Snagit/media/d13eaa10-58b1-484b-a3f8-6b466f1c831a/06.24.2019-23.24.png" align="center">
+
+The following code loads the coco annotations as well as one of our trained FCN models, which is copied into the GPU. A PyTorch DataLoader to feed data to the model is also instantiated. Next, a small batch of data is loaded through the DataLoader and then proceeds to copy that data into the GPU where the network was stored. The model then performs inference on the data batch, which can be turned into a visible format.  
+
+<img src="https://content.screencast.com/users/romeubertho/folders/Snagit/media/56ba360e-03ff-4d8a-9499-a9bad02110bd/06.24.2019-23.40.png" align="center">
+
+
+
+
 ## 7. Results
 
 The results below consists in examples from the FCN-Alexnet that has been trained on a fraction of the whole COCO dataset (10k/87k available images). Although the training is incomplete, preliminiary predictions showed interesting results and surpassed the overall expectations.  
