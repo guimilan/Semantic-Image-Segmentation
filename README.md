@@ -52,7 +52,7 @@ Finally, it is necessary to find ways to measure model accuracy over the task of
 ## 3. Image sets
 
 For the purpose of training the network, the MS Coco dataset will be used [1]. It contains a wide range of
-pictures displaying common objects, such as the sample below, as well as the ground truth containing each image's  segmentation masks. 
+pictures displaying common objects, such as the sample below, as well as the ground truth containing each image's segmentation masks. MS Coco train dataset from 2014 has 82783 images, 13gb size and up to 80 classes labeled from 1 to 90. 
 
 <img src="http://images.cocodataset.org/train2014/COCO_train2014_000000002758.jpg" alt="MS COCO sample" width="200" height="200"><img src="https://content.screencast.com/users/romeubertho/folders/Snagit/media/1cefcc80-503a-4207-8df4-1927a2f801ab/05.29.2019-23.12.png" alt="MS COCO segmentation sample" width="200" height="200">
 
