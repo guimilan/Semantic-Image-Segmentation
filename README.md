@@ -186,6 +186,10 @@ This is the Jupyter notebook used to present the achieved results . It illustrat
 
 ## 7. Results
 
+The results below consists in examples from the FCN-Alexnet that has been trained on a fraction of the whole COCO dataset (10k/87k available images). Although the training is incomplete, preliminiary predictions showed interesting results and surpassed the overall expectations.  
+
+The original images and the generated masks are displayed side by side. The first column shows the original image, while the second column contains the raw output from the network. The third column displays the isolated mask, while the last column overlays the mask on the original image.
+
 <img src="https://content.screencast.com/users/romeubertho/folders/Snagit/media/c9cae1b3-2a6f-425c-a57d-42e88e91f1c0/06.24.2019-20.59.png" alt="results" width="800" height="1400" align="center">
 
 ## 8. Conclusion
