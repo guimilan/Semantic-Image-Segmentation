@@ -186,6 +186,8 @@ This is the Jupyter notebook used to present the achieved results . It illustrat
 
 ## 7. Results
 
+<img src="https://content.screencast.com/users/romeubertho/folders/Snagit/media/c9cae1b3-2a6f-425c-a57d-42e88e91f1c0/06.24.2019-20.59.png" alt="results" width="800" height="1400" align="center">
+
 ## 8. Conclusion
 Due to the strict time constraints imposed on this project, not all experiments and measurements could be fully realized. However, the obtained results were considered satisfactory, with successful semantic segmentation being achieved with only a small subset of the entire database having been used for training. The architectured, thus, surpassed our initial expectations, and the originally proposed ideas remain as possible avenues for future study. 
 
